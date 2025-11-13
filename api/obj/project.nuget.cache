@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "EthSsVGAFT4=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\tynas\\Documents\\MIS330\\GP#1\\MIS330-GroupProject-1\\api\\api.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\tynas\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.0\\microsoft.aspnetcore.openapi.10.0.0.nupkg.sha512",
+    "C:\\Users\\tynas\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
