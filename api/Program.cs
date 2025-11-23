@@ -1,27 +1,27 @@
+using MySql.Data.MySqlClient;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Register MySQL Connection for dependency injection
+builder.Services.AddScoped<MySqlConnection>(_ =>
+    new MySqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Add services to the container
 builder.Services.AddControllers();
-builder.Services.AddCors(options => { options.AddPolicy("OpenPolicy", builder => { builder.AllowAnyOrigin() .AllowAnyMethod() .AllowAnyHeader(); }); });
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();   // Swagger for .NET 8
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Enable Swagger only in Development
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-app.UseCors("OpenPolicy");
-
-
 app.MapControllers();
 
 app.Run();
