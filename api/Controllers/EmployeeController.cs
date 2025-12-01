@@ -23,20 +23,17 @@ public class EmployeeController : ControllerBase
         {
             await _connection.OpenAsync();
             var employees = new List<Employee>();
-            var command = new MySqlCommand("SELECT EmployeeId, FirstName, LastName, Email, Phone, Position, HireDate FROM Employee", _connection);
+            var command = new MySqlCommand("SELECT empid, firstname, lastname, position FROM Employee", _connection);
             
             using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 employees.Add(new Employee
                 {
-                    EmployeeId = reader.GetInt32("EmployeeId"),
-                    FirstName = reader.GetString("FirstName"),
-                    LastName = reader.GetString("LastName"),
-                    Email = reader.IsDBNull("Email") ? null : reader.GetString("Email"),
-                    Phone = reader.IsDBNull("Phone") ? null : reader.GetString("Phone"),
-                    Position = reader.IsDBNull("Position") ? null : reader.GetString("Position"),
-                    HireDate = reader.IsDBNull("HireDate") ? null : reader.GetDateTime("HireDate")
+                    EmployeeId = reader.GetInt32("empid"),
+                    FirstName = reader.GetString("firstname"),
+                    LastName = reader.GetString("lastname"),
+                    Position = reader.IsDBNull("position") ? null : reader.GetString("position")
                 });
             }
             
@@ -60,7 +57,7 @@ public class EmployeeController : ControllerBase
         try
         {
             await _connection.OpenAsync();
-            var command = new MySqlCommand("SELECT EmployeeId, FirstName, LastName, Email, Phone, Position, HireDate FROM Employee WHERE EmployeeId = @id", _connection);
+            var command = new MySqlCommand("SELECT empid, firstname, lastname, position FROM Employee WHERE empid = @id", _connection);
             command.Parameters.AddWithValue("@id", id);
             
             using var reader = await command.ExecuteReaderAsync();
@@ -68,13 +65,10 @@ public class EmployeeController : ControllerBase
             {
                 var employee = new Employee
                 {
-                    EmployeeId = reader.GetInt32("EmployeeId"),
-                    FirstName = reader.GetString("FirstName"),
-                    LastName = reader.GetString("LastName"),
-                    Email = reader.IsDBNull("Email") ? null : reader.GetString("Email"),
-                    Phone = reader.IsDBNull("Phone") ? null : reader.GetString("Phone"),
-                    Position = reader.IsDBNull("Position") ? null : reader.GetString("Position"),
-                    HireDate = reader.IsDBNull("HireDate") ? null : reader.GetDateTime("HireDate")
+                    EmployeeId = reader.GetInt32("empid"),
+                    FirstName = reader.GetString("firstname"),
+                    LastName = reader.GetString("lastname"),
+                    Position = reader.IsDBNull("position") ? null : reader.GetString("position")
                 };
                 return Ok(employee);
             }
@@ -105,15 +99,12 @@ public class EmployeeController : ControllerBase
         {
             await _connection.OpenAsync();
             var command = new MySqlCommand(
-                "INSERT INTO Employee (FirstName, LastName, Email, Phone, Position, HireDate) VALUES (@FirstName, @LastName, @Email, @Phone, @Position, @HireDate); SELECT LAST_INSERT_ID();",
+                "INSERT INTO Employee (firstname, lastname, position) VALUES (@firstname, @lastname, @position); SELECT LAST_INSERT_ID();",
                 _connection);
             
-            command.Parameters.AddWithValue("@FirstName", employee.FirstName);
-            command.Parameters.AddWithValue("@LastName", employee.LastName);
-            command.Parameters.AddWithValue("@Email", (object?)employee.Email ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Phone", (object?)employee.Phone ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Position", (object?)employee.Position ?? DBNull.Value);
-            command.Parameters.AddWithValue("@HireDate", (object?)employee.HireDate ?? DBNull.Value);
+            command.Parameters.AddWithValue("@firstname", employee.FirstName);
+            command.Parameters.AddWithValue("@lastname", employee.LastName);
+            command.Parameters.AddWithValue("@position", (object?)employee.Position ?? DBNull.Value);
             
             var newId = Convert.ToInt32(await command.ExecuteScalarAsync());
             employee.EmployeeId = newId;
@@ -149,16 +140,13 @@ public class EmployeeController : ControllerBase
         {
             await _connection.OpenAsync();
             var command = new MySqlCommand(
-                "UPDATE Employee SET FirstName = @FirstName, LastName = @LastName, Email = @Email, Phone = @Phone, Position = @Position, HireDate = @HireDate WHERE EmployeeId = @EmployeeId",
+                "UPDATE Employee SET firstname = @firstname, lastname = @lastname, position = @position WHERE empid = @empid",
                 _connection);
             
-            command.Parameters.AddWithValue("@EmployeeId", id);
-            command.Parameters.AddWithValue("@FirstName", employee.FirstName);
-            command.Parameters.AddWithValue("@LastName", employee.LastName);
-            command.Parameters.AddWithValue("@Email", (object?)employee.Email ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Phone", (object?)employee.Phone ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Position", (object?)employee.Position ?? DBNull.Value);
-            command.Parameters.AddWithValue("@HireDate", (object?)employee.HireDate ?? DBNull.Value);
+            command.Parameters.AddWithValue("@empid", id);
+            command.Parameters.AddWithValue("@firstname", employee.FirstName);
+            command.Parameters.AddWithValue("@lastname", employee.LastName);
+            command.Parameters.AddWithValue("@position", (object?)employee.Position ?? DBNull.Value);
             
             var rowsAffected = await command.ExecuteNonQueryAsync();
             
@@ -187,7 +175,7 @@ public class EmployeeController : ControllerBase
         try
         {
             await _connection.OpenAsync();
-            var command = new MySqlCommand("DELETE FROM Employee WHERE EmployeeId = @id", _connection);
+            var command = new MySqlCommand("DELETE FROM Employee WHERE empid = @id", _connection);
             command.Parameters.AddWithValue("@id", id);
             
             var rowsAffected = await command.ExecuteNonQueryAsync();
@@ -216,9 +204,6 @@ public class Employee
     public int EmployeeId { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
-    public string? Email { get; set; }
-    public string? Phone { get; set; }
     public string? Position { get; set; }
-    public DateTime? HireDate { get; set; }
 }
 

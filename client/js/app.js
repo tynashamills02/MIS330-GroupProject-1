@@ -1,71 +1,118 @@
+// ============================================
+// Happy Paws Training - Main Application
+// ============================================
+
 // API Configuration
 const API_BASE_URL = 'http://localhost:5172/api';
 
 // Global state
 let currentDeleteCallback = null;
-let currentDeleteId = null;
-let currentDeleteEntity = null;
 
-// Initialize app when DOM is loaded
+// ============================================
+// Initialization
+// ============================================
+
 document.addEventListener('DOMContentLoaded', () => {
   initializeNavigation();
-  loadCustomers();
+  showSection('home');
   setupDeleteModal();
+  // Preload all table data when DOM is ready
+  loadCustomers();
+  loadPets();
+  loadTrainers();
+  loadEmployees();
+  loadClasses();
+  loadBookings();
 });
 
-// Navigation Setup
+// ============================================
+// Navigation
+// ============================================
+
 function initializeNavigation() {
   const navLinks = document.querySelectorAll('.nav-link[data-section]');
   navLinks.forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const section = link.getAttribute('data-section');
-      showSection(section);
       
-      // Update active nav link
+      if (section === 'admin') {
+        showSection('admin');
+      } else {
+        showSection(section);
+      }
+      
       navLinks.forEach(nl => nl.classList.remove('active'));
       link.classList.add('active');
     });
   });
 }
 
-// Show specific section
-function showSection(sectionName) {
-  // Hide all sections
+function showSection(sectionName, tabName = null) {
   document.querySelectorAll('.content-section').forEach(section => {
     section.style.display = 'none';
   });
   
-  // Show selected section
+  if (sectionName === 'admin' || ['customers', 'pets', 'trainers', 'employees', 'classes', 'bookings'].includes(sectionName)) {
+    const adminSection = document.getElementById('admin-section');
+    if (adminSection) {
+      adminSection.style.display = 'block';
+      
+      const targetTab = tabName || sectionName;
+      if (targetTab !== 'admin') {
+        activateTab(targetTab);
+        loadSectionData(targetTab);
+      } else {
+        activateTab('customers');
+        loadSectionData('customers');
+      }
+      return;
+    }
+  }
+  
   const targetSection = document.getElementById(`${sectionName}-section`);
   if (targetSection) {
     targetSection.style.display = 'block';
-    
-    // Load data for the section
-    switch(sectionName) {
-      case 'customers':
-        loadCustomers();
-        break;
-      case 'pets':
-        loadPets();
-        break;
-      case 'trainers':
-        loadTrainers();
-        break;
-      case 'employees':
-        loadEmployees();
-        break;
-      case 'classes':
-        loadClasses();
-        break;
-      case 'bookings':
-        loadBookings();
-        break;
+    if (sectionName === 'home') {
+      loadHomeStats();
     }
   }
 }
 
-// Alert helper
+function activateTab(tabName) {
+  const tabButton = document.getElementById(`${tabName}-tab`);
+  const tabPane = document.getElementById(`${tabName}-pane`);
+  
+  if (tabButton && tabPane) {
+    document.querySelectorAll('#adminTabs .nav-link').forEach(tab => {
+      tab.classList.remove('active');
+      tab.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('#adminTabContent .tab-pane').forEach(pane => {
+      pane.classList.remove('show', 'active');
+    });
+    
+    tabButton.classList.add('active');
+    tabButton.setAttribute('aria-selected', 'true');
+    tabPane.classList.add('show', 'active');
+  }
+}
+
+function loadSectionData(sectionName) {
+  switch(sectionName) {
+    case 'customers': loadCustomers(); break;
+    case 'pets': loadPets(); break;
+    case 'trainers': loadTrainers(); break;
+    case 'employees': loadEmployees(); break;
+    case 'classes': loadClasses(); break;
+    case 'bookings': loadBookings(); break;
+  }
+}
+
+// ============================================
+// Utilities
+// ============================================
+
 function showAlert(message, type = 'success') {
   const alertContainer = document.getElementById('alertContainer');
   const alertId = `alert-${Date.now()}`;
@@ -77,7 +124,6 @@ function showAlert(message, type = 'success') {
   `;
   alertContainer.innerHTML = alertHtml;
   
-  // Auto-dismiss after 5 seconds
   setTimeout(() => {
     const alert = document.getElementById(alertId);
     if (alert) {
@@ -87,14 +133,11 @@ function showAlert(message, type = 'success') {
   }, 5000);
 }
 
-// Generic API call function
 async function apiCall(endpoint, method = 'GET', data = null) {
   try {
     const options = {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' }
     };
     
     if (data && (method === 'POST' || method === 'PUT')) {
@@ -107,21 +150,15 @@ async function apiCall(endpoint, method = 'GET', data = null) {
       const errorData = await response.json().catch(() => ({ 
         message: `HTTP error! status: ${response.status}` 
       }));
-      // Include the error details if available
       const errorMessage = errorData.error 
         ? `${errorData.message}: ${errorData.error}` 
         : (errorData.message || `HTTP error! status: ${response.status}`);
       throw new Error(errorMessage);
     }
     
-    // Handle 204 No Content
-    if (response.status === 204) {
-      return null;
-    }
-    
+    if (response.status === 204) return null;
     return await response.json();
   } catch (error) {
-    // Handle network errors
     if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
       throw new Error('Cannot connect to API. Make sure the API server is running on http://localhost:5172');
     }
@@ -130,13 +167,23 @@ async function apiCall(endpoint, method = 'GET', data = null) {
   }
 }
 
-// ==================== CUSTOMERS ====================
+function formatTimeSpan(timeSpan) {
+  if (typeof timeSpan === 'string') {
+    return timeSpan;
+  }
+  return timeSpan;
+}
+
+// ============================================
+// Customers
+// ============================================
+
 async function loadCustomers() {
   try {
     const customers = await apiCall('Customer');
     const tbody = document.getElementById('customers-table-body');
     
-    if (customers.length === 0) {
+    if (!customers || customers.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center">No customers found</td></tr>';
       return;
     }
@@ -159,10 +206,9 @@ async function loadCustomers() {
       </tr>
     `).join('');
   } catch (error) {
-    const errorMsg = error.message || 'Unknown error';
-    showAlert(`Error loading customers: ${errorMsg}`, 'danger');
+    showAlert(`Error loading customers: ${error.message}`, 'danger');
     document.getElementById('customers-table-body').innerHTML = 
-      `<tr><td colspan="6" class="text-center text-danger">Error: ${errorMsg}</td></tr>`;
+      '<tr><td colspan="6" class="text-center text-danger">Error loading data</td></tr>';
   }
 }
 
@@ -227,8 +273,6 @@ async function saveCustomer() {
 }
 
 function deleteCustomer(id) {
-  currentDeleteId = id;
-  currentDeleteEntity = 'Customer';
   currentDeleteCallback = async () => {
     try {
       await apiCall(`Customer/${id}`, 'DELETE');
@@ -243,13 +287,16 @@ function deleteCustomer(id) {
   modal.show();
 }
 
-// ==================== PETS ====================
+// ============================================
+// Pets
+// ============================================
+
 async function loadPets() {
   try {
     const pets = await apiCall('Pet');
     const tbody = document.getElementById('pets-table-body');
     
-    if (pets.length === 0) {
+    if (!pets || pets.length === 0) {
       tbody.innerHTML = '<tr><td colspan="7" class="text-center">No pets found</td></tr>';
       return;
     }
@@ -344,8 +391,6 @@ async function savePet() {
 }
 
 function deletePet(id) {
-  currentDeleteId = id;
-  currentDeleteEntity = 'Pet';
   currentDeleteCallback = async () => {
     try {
       await apiCall(`Pet/${id}`, 'DELETE');
@@ -360,13 +405,16 @@ function deletePet(id) {
   modal.show();
 }
 
-// ==================== TRAINERS ====================
+// ============================================
+// Trainers
+// ============================================
+
 async function loadTrainers() {
   try {
     const trainers = await apiCall('Trainer');
     const tbody = document.getElementById('trainers-table-body');
     
-    if (trainers.length === 0) {
+    if (!trainers || trainers.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center">No trainers found</td></tr>';
       return;
     }
@@ -456,8 +504,6 @@ async function saveTrainer() {
 }
 
 function deleteTrainer(id) {
-  currentDeleteId = id;
-  currentDeleteEntity = 'Trainer';
   currentDeleteCallback = async () => {
     try {
       await apiCall(`Trainer/${id}`, 'DELETE');
@@ -472,14 +518,17 @@ function deleteTrainer(id) {
   modal.show();
 }
 
-// ==================== EMPLOYEES ====================
+// ============================================
+// Employees
+// ============================================
+
 async function loadEmployees() {
   try {
     const employees = await apiCall('Employee');
     const tbody = document.getElementById('employees-table-body');
     
-    if (employees.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center">No employees found</td></tr>';
+    if (!employees || employees.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center">No employees found</td></tr>';
       return;
     }
     
@@ -488,10 +537,7 @@ async function loadEmployees() {
         <td>${employee.employeeId}</td>
         <td>${employee.firstName}</td>
         <td>${employee.lastName}</td>
-        <td>${employee.email || '-'}</td>
-        <td>${employee.phone || '-'}</td>
         <td>${employee.position || '-'}</td>
-        <td>${employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : '-'}</td>
         <td>
           <button class="btn btn-sm btn-primary" onclick="editEmployee(${employee.employeeId})">
             <i class="bi bi-pencil"></i> Edit
@@ -505,7 +551,7 @@ async function loadEmployees() {
   } catch (error) {
     showAlert(`Error loading employees: ${error.message}`, 'danger');
     document.getElementById('employees-table-body').innerHTML = 
-      '<tr><td colspan="8" class="text-center text-danger">Error loading data</td></tr>';
+      '<tr><td colspan="5" class="text-center text-danger">Error loading data</td></tr>';
   }
 }
 
@@ -520,10 +566,7 @@ function openEmployeeModal(employee = null) {
     document.getElementById('employeeId').value = employee.employeeId;
     document.getElementById('employeeFirstName').value = employee.firstName;
     document.getElementById('employeeLastName').value = employee.lastName;
-    document.getElementById('employeeEmail').value = employee.email || '';
-    document.getElementById('employeePhone').value = employee.phone || '';
     document.getElementById('employeePosition').value = employee.position || '';
-    document.getElementById('employeeHireDate').value = employee.hireDate ? employee.hireDate.split('T')[0] : '';
   } else {
     document.getElementById('employeeModalTitle').textContent = 'Add Employee';
   }
@@ -551,10 +594,7 @@ async function saveEmployee() {
     employeeId: parseInt(document.getElementById('employeeId').value) || 0,
     firstName: document.getElementById('employeeFirstName').value,
     lastName: document.getElementById('employeeLastName').value,
-    email: document.getElementById('employeeEmail').value || null,
-    phone: document.getElementById('employeePhone').value || null,
-    position: document.getElementById('employeePosition').value || null,
-    hireDate: document.getElementById('employeeHireDate').value || null
+    position: document.getElementById('employeePosition').value || null
   };
   
   try {
@@ -574,8 +614,6 @@ async function saveEmployee() {
 }
 
 function deleteEmployee(id) {
-  currentDeleteId = id;
-  currentDeleteEntity = 'Employee';
   currentDeleteCallback = async () => {
     try {
       await apiCall(`Employee/${id}`, 'DELETE');
@@ -590,20 +628,23 @@ function deleteEmployee(id) {
   modal.show();
 }
 
-// ==================== CLASSES ====================
+// ============================================
+// Classes
+// ============================================
+
 async function loadClasses() {
   try {
     const classes = await apiCall('Class');
     const tbody = document.getElementById('classes-table-body');
     
-    if (classes.length === 0) {
+    if (!classes || classes.length === 0) {
       tbody.innerHTML = '<tr><td colspan="10" class="text-center">No classes found</td></tr>';
       return;
     }
     
     tbody.innerHTML = classes.map(cls => {
-      const startTime = formatTimeSpan(cls.startTime);
-      const endTime = formatTimeSpan(cls.endTime);
+      const startTime = cls.startTime || '-';
+      const endTime = cls.endTime || '-';
       return `
         <tr>
           <td>${cls.classId}</td>
@@ -633,16 +674,6 @@ async function loadClasses() {
   }
 }
 
-function formatTimeSpan(timeSpan) {
-  if (typeof timeSpan === 'string') {
-    const parts = timeSpan.split(':');
-    return `${parts[0]}:${parts[1]}`;
-  }
-  const hours = Math.floor(timeSpan / 36000000000);
-  const minutes = Math.floor((timeSpan % 36000000000) / 600000000);
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-}
-
 function openClassModal(cls = null) {
   const modal = new bootstrap.Modal(document.getElementById('classModal'));
   const form = document.getElementById('classForm');
@@ -663,7 +694,6 @@ function openClassModal(cls = null) {
     document.getElementById('classMaxCapacity').value = cls.maxCapacity;
     document.getElementById('classPrice').value = cls.price;
     
-    // Handle time spans
     const startTime = formatTimeSpan(cls.startTime);
     const endTime = formatTimeSpan(cls.endTime);
     document.getElementById('classStartTime').value = startTime;
@@ -691,9 +721,6 @@ async function saveClass() {
     return;
   }
   
-  const startTimeStr = document.getElementById('classStartTime').value;
-  const endTimeStr = document.getElementById('classEndTime').value;
-  
   const classItem = {
     classId: parseInt(document.getElementById('classId').value) || 0,
     trainerId: parseInt(document.getElementById('classTrainerId').value),
@@ -701,8 +728,8 @@ async function saveClass() {
     title: document.getElementById('classTitle').value,
     description: document.getElementById('classDescription').value,
     location: document.getElementById('classLocation').value,
-    startTime: startTimeStr,
-    endTime: endTimeStr,
+    startTime: document.getElementById('classStartTime').value,
+    endTime: document.getElementById('classEndTime').value,
     startDate: document.getElementById('classStartDate').value,
     endDate: document.getElementById('classEndDate').value,
     maxCapacity: parseInt(document.getElementById('classMaxCapacity').value),
@@ -727,8 +754,6 @@ async function saveClass() {
 }
 
 function deleteClass(id) {
-  currentDeleteId = id;
-  currentDeleteEntity = 'Class';
   currentDeleteCallback = async () => {
     try {
       await apiCall(`Class/${id}`, 'DELETE');
@@ -743,13 +768,16 @@ function deleteClass(id) {
   modal.show();
 }
 
-// ==================== BOOKINGS ====================
+// ============================================
+// Bookings
+// ============================================
+
 async function loadBookings() {
   try {
     const bookings = await apiCall('Booking');
     const tbody = document.getElementById('bookings-table-body');
     
-    if (bookings.length === 0) {
+    if (!bookings || bookings.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" class="text-center">No bookings found</td></tr>';
       return;
     }
@@ -813,7 +841,6 @@ function openBookingModal(booking = null) {
     document.getElementById('bookingPetId').value = booking.petId;
     document.getElementById('bookingEmployeeId').value = booking.employeeId;
     
-    // Format datetime for datetime-local input
     const bookingDate = new Date(booking.bookingDate);
     const year = bookingDate.getFullYear();
     const month = String(bookingDate.getMonth() + 1).padStart(2, '0');
@@ -876,8 +903,6 @@ async function saveBooking() {
 }
 
 function deleteBooking(id) {
-  currentDeleteId = id;
-  currentDeleteEntity = 'Booking';
   currentDeleteCallback = async () => {
     try {
       await apiCall(`Booking/${id}`, 'DELETE');
@@ -892,7 +917,56 @@ function deleteBooking(id) {
   modal.show();
 }
 
-// ==================== DELETE MODAL SETUP ====================
+// ============================================
+// Homepage
+// ============================================
+
+async function loadHomeStats() {
+  try {
+    const [customers, pets, classes, trainers] = await Promise.all([
+      apiCall('Customer'),
+      apiCall('Pet'),
+      apiCall('Class'),
+      apiCall('Trainer')
+    ]);
+
+    animateNumber('stat-customers', customers?.length || 0);
+    animateNumber('stat-pets', pets?.length || 0);
+    animateNumber('stat-classes', classes?.length || 0);
+    animateNumber('stat-trainers', trainers?.length || 0);
+  } catch (error) {
+    console.error('Error loading homepage stats:', error);
+    document.getElementById('stat-customers').textContent = '0';
+    document.getElementById('stat-pets').textContent = '0';
+    document.getElementById('stat-classes').textContent = '0';
+    document.getElementById('stat-trainers').textContent = '0';
+  }
+}
+
+function animateNumber(elementId, targetValue) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  
+  const duration = 1000;
+  const startValue = 0;
+  const increment = targetValue / (duration / 16);
+  let currentValue = startValue;
+  
+  const timer = setInterval(() => {
+    currentValue += increment;
+    if (currentValue >= targetValue) {
+      element.textContent = targetValue;
+      clearInterval(timer);
+    } else {
+      element.textContent = Math.floor(currentValue);
+    }
+  }, 16);
+}
+
+// ============================================
+// Delete Modal
+// ============================================
+
 function setupDeleteModal() {
   document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
     if (currentDeleteCallback) {
@@ -902,4 +976,3 @@ function setupDeleteModal() {
     }
   });
 }
-

@@ -36,8 +36,8 @@ public class ClassController : ControllerBase
                     Title = reader.GetString("title"),
                     Description = reader.GetString("description"),
                     Location = reader.GetString("location"),
-                    StartTime = reader.GetDateTime("starttime").TimeOfDay,
-                    EndTime = reader.GetDateTime("endtime").TimeOfDay,
+                    StartTime = reader.IsDBNull("starttime") ? string.Empty : (reader["starttime"] is TimeSpan startTs ? $"{startTs.Hours:D2}:{startTs.Minutes:D2}:{startTs.Seconds:D2}" : reader["starttime"].ToString()!),
+                    EndTime = reader.IsDBNull("endtime") ? string.Empty : (reader["endtime"] is TimeSpan endTs ? $"{endTs.Hours:D2}:{endTs.Minutes:D2}:{endTs.Seconds:D2}" : reader["endtime"].ToString()!),
                     StartDate = reader.GetDateTime("startdate"),
                     EndDate = reader.GetDateTime("enddate"),
                     MaxCapacity = reader.GetInt32("maxcapacity"),
@@ -80,8 +80,8 @@ public class ClassController : ControllerBase
                     Title = reader.GetString("title"),
                     Description = reader.GetString("description"),
                     Location = reader.GetString("location"),
-                    StartTime = reader.GetDateTime("starttime").TimeOfDay,
-                    EndTime = reader.GetDateTime("endtime").TimeOfDay,
+                    StartTime = reader.IsDBNull("starttime") ? string.Empty : (reader["starttime"] is TimeSpan startTs ? $"{startTs.Hours:D2}:{startTs.Minutes:D2}:{startTs.Seconds:D2}" : reader["starttime"].ToString()!),
+                    EndTime = reader.IsDBNull("endtime") ? string.Empty : (reader["endtime"] is TimeSpan endTs ? $"{endTs.Hours:D2}:{endTs.Minutes:D2}:{endTs.Seconds:D2}" : reader["endtime"].ToString()!),
                     StartDate = reader.GetDateTime("startdate"),
                     EndDate = reader.GetDateTime("enddate"),
                     MaxCapacity = reader.GetInt32("maxcapacity"),
@@ -243,8 +243,8 @@ public class Class
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
-    public TimeSpan StartTime { get; set; }
-    public TimeSpan EndTime { get; set; }
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public int MaxCapacity { get; set; }
