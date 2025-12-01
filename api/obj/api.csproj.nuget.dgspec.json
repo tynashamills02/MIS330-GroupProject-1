@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\sb624\\onedrive\\documentos\\source\\mis321\\330groupproject\\MIS330-GroupProject-1\\api\\api.csproj": {}
+    "/Users/griffincarpenter/Documents/GitHub/MIS330-GroupProject-1/api/api.csproj": {}
   },
   "projects": {
-    "C:\\Users\\sb624\\onedrive\\documentos\\source\\mis321\\330groupproject\\MIS330-GroupProject-1\\api\\api.csproj": {
+    "/Users/griffincarpenter/Documents/GitHub/MIS330-GroupProject-1/api/api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\sb624\\onedrive\\documentos\\source\\mis321\\330groupproject\\MIS330-GroupProject-1\\api\\api.csproj",
+        "projectUniqueName": "/Users/griffincarpenter/Documents/GitHub/MIS330-GroupProject-1/api/api.csproj",
         "projectName": "api",
-        "projectPath": "C:\\Users\\sb624\\onedrive\\documentos\\source\\mis321\\330groupproject\\MIS330-GroupProject-1\\api\\api.csproj",
-        "packagesPath": "C:\\Users\\sb624\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\sb624\\onedrive\\documentos\\source\\mis321\\330groupproject\\MIS330-GroupProject-1\\api\\obj\\",
+        "projectPath": "/Users/griffincarpenter/Documents/GitHub/MIS330-GroupProject-1/api/api.csproj",
+        "packagesPath": "/Users/griffincarpenter/.nuget/packages/",
+        "outputPath": "/Users/griffincarpenter/Documents/GitHub/MIS330-GroupProject-1/api/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\sb624\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/Users/griffincarpenter/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -75,7 +75,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.405/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.405/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
