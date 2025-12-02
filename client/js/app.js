@@ -99,6 +99,12 @@ function showSection(sectionName) {
       case 'customer-classes':
         loadCustomerClasses();
         break;
+      case 'customer-bookings':
+        loadCustomerBookings();
+        break;
+      case 'customer-pets':
+        loadCustomerPetsForView();
+        break;
       case 'trainer-dashboard':
         updateTrainerDashboard();
         break;
@@ -390,6 +396,16 @@ async function savePet() {
   
   try {
     if (pet.petId > 0) {
+      // If editing and user is a customer, verify ownership
+      if (currentUser && currentUser.userType === 'customer') {
+        await loadCustomerPets();
+        const existingPet = customerPets.find(p => p.petId === pet.petId);
+        if (!existingPet) {
+          showAlert('You do not have permission to edit this pet.', 'danger');
+          return;
+        }
+      }
+      
       await apiCall(`Pet/${pet.petId}`, 'PUT', pet);
       showAlert('Pet updated successfully!');
     } else {
@@ -398,7 +414,15 @@ async function savePet() {
     }
     
     bootstrap.Modal.getInstance(document.getElementById('petModal')).hide();
-    loadPets();
+    
+    // Check if we're on customer pets page and reload that view
+    const customerPetsSection = document.getElementById('customer-pets-section');
+    if (customerPetsSection && customerPetsSection.style.display !== 'none') {
+      await loadCustomerPetsForView();
+      await loadCustomerPets(); // Reload customer pets array
+    } else {
+      loadPets(); // Reload admin pets view
+    }
   } catch (error) {
     showAlert(`Error saving pet: ${error.message}`, 'danger');
   }
@@ -411,7 +435,15 @@ function deletePet(id) {
     try {
       await apiCall(`Pet/${id}`, 'DELETE');
       showAlert('Pet deleted successfully!');
-      loadPets();
+      
+      // Check if we're on customer pets page and reload that view
+      const customerPetsSection = document.getElementById('customer-pets-section');
+      if (customerPetsSection && customerPetsSection.style.display !== 'none') {
+        await loadCustomerPetsForView();
+        await loadCustomerPets(); // Reload customer pets array
+      } else {
+        loadPets(); // Reload admin pets view
+      }
     } catch (error) {
       showAlert(`Error deleting pet: ${error.message}`, 'danger');
     }
@@ -1583,13 +1615,13 @@ function openCustomerPetModal() {
     return;
   }
   
-  const modal = new bootstrap.Modal(document.getElementById('customerPetModal'));
-  const form = document.getElementById('customerPetForm');
-  form.reset();
-  modal.show();
+  // Use the main pet modal for consistency
+  openPetModalForCustomer(null);
 }
 
 async function submitCustomerPet() {
+  // This function is kept for backward compatibility with customerPetModal
+  // But we'll use saveCustomerPet() for the main pet modal
   const form = document.getElementById('customerPetForm');
   if (!form.checkValidity()) {
     form.reportValidity();
@@ -1615,7 +1647,13 @@ async function submitCustomerPet() {
     showAlert('Pet added successfully!', 'success');
     bootstrap.Modal.getInstance(document.getElementById('customerPetModal')).hide();
     
-    // Reload pets
+    // Reload customer pets view if on that page
+    const customerPetsSection = document.getElementById('customer-pets-section');
+    if (customerPetsSection && customerPetsSection.style.display !== 'none') {
+      await loadCustomerPetsForView();
+    }
+    
+    // Reload pets array
     await loadCustomerPets();
     
     // If booking modal was open, refresh it
@@ -1632,5 +1670,290 @@ async function submitCustomerPet() {
   } catch (error) {
     showAlert(`Error adding pet: ${error.message}`, 'danger');
   }
+}
+
+// ==================== CUSTOMER BOOKINGS ====================
+async function loadCustomerBookings() {
+  try {
+    // Ensure customer pets are loaded
+    await loadCustomerPets();
+    
+    if (!currentUser || currentUser.userType !== 'customer') {
+      document.getElementById('customer-bookings-table-body').innerHTML = 
+        '<tr><td colspan="7" class="text-center text-danger">Please log in as a customer to view bookings.</td></tr>';
+      return;
+    }
+
+    if (customerPets.length === 0) {
+      document.getElementById('customer-bookings-table-body').innerHTML = 
+        '<tr><td colspan="7" class="text-center text-muted">No pets found. Please add a pet to make bookings.</td></tr>';
+      return;
+    }
+
+    // Get all bookings
+    const bookings = await apiCall('Booking');
+    
+    // Get all pets and classes for lookup
+    const pets = await apiCall('Pet');
+    const classes = await apiCall('Class');
+    
+    // Create lookup maps
+    const petMap = new Map(pets.map(pet => [pet.petId, pet]));
+    const classMap = new Map(classes.map(cls => [cls.classId, cls]));
+    
+    // Get customer's pet IDs
+    const customerPetIds = new Set(customerPets.map(pet => pet.petId));
+    
+    // Filter bookings for customer's pets
+    const customerBookings = bookings.filter(booking => customerPetIds.has(booking.petId));
+    
+    const tbody = document.getElementById('customer-bookings-table-body');
+    
+    if (customerBookings.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No bookings found.</td></tr>';
+      return;
+    }
+    
+    // Sort by booking date (newest first)
+    customerBookings.sort((a, b) => new Date(b.bookingDate) - new Date(a.bookingDate));
+    
+    tbody.innerHTML = customerBookings.map(booking => {
+      const pet = petMap.get(booking.petId);
+      const classData = classMap.get(booking.classId);
+      
+      const petName = pet ? pet.name : 'Unknown Pet';
+      const className = classData ? classData.title : 'Unknown Class';
+      
+      // Format class date and time
+      let classDateTime = 'N/A';
+      if (classData) {
+        const startDate = new Date(classData.startDate);
+        const startTime = classData.startTime || '';
+        // Format date as MM/DD/YYYY and time as HH:mm
+        const formattedDate = startDate.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit' 
+        });
+        // Extract hours and minutes from time string (HH:mm:ss)
+        const timeParts = startTime.split(':');
+        const formattedTime = timeParts.length >= 2 ? `${timeParts[0]}:${timeParts[1]}` : startTime;
+        classDateTime = `${formattedDate} ${formattedTime}`;
+      }
+      
+      // Format booking date
+      const bookingDate = new Date(booking.bookingDate).toLocaleString();
+      
+      // Status badge
+      const statusBadgeColor = getStatusBadgeColor(booking.status);
+      const canCancel = booking.status !== 'Canceled' && booking.status !== 'Cancelled';
+      
+      return `
+        <tr>
+          <td>${booking.bookingId}</td>
+          <td>${petName}</td>
+          <td>${className}</td>
+          <td>${classDateTime}</td>
+          <td><span class="badge bg-${statusBadgeColor}">${booking.status}</span></td>
+          <td>$${parseFloat(booking.amountPaid).toFixed(2)}</td>
+          <td>
+            ${canCancel ? `
+              <button class="btn btn-sm btn-danger" onclick="cancelCustomerBooking(${booking.bookingId})">
+                <i class="bi bi-x-circle"></i> Cancel
+              </button>
+            ` : '<span class="text-muted">-</span>'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (error) {
+    showAlert(`Error loading bookings: ${error.message}`, 'danger');
+    document.getElementById('customer-bookings-table-body').innerHTML = 
+      '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
+  }
+}
+
+async function cancelCustomerBooking(bookingId) {
+  if (!confirm('Are you sure you want to cancel this booking?')) {
+    return;
+  }
+
+  try {
+    // Get the current booking
+    const bookings = await apiCall('Booking');
+    const booking = bookings.find(b => b.bookingId === bookingId);
+    
+    if (!booking) {
+      showAlert('Booking not found.', 'danger');
+      return;
+    }
+
+    // Update booking status to "Canceled"
+    const updatedBooking = {
+      bookingId: booking.bookingId,
+      classId: booking.classId,
+      petId: booking.petId,
+      employeeId: booking.employeeId,
+      bookingDate: booking.bookingDate,
+      status: 'Canceled',
+      paymentStatus: booking.paymentStatus,
+      amountPaid: booking.amountPaid
+    };
+
+    await apiCall(`Booking/${bookingId}`, 'PUT', updatedBooking);
+    showAlert('Booking canceled successfully!', 'success');
+    
+    // Reload customer bookings
+    await loadCustomerBookings();
+  } catch (error) {
+    showAlert(`Error canceling booking: ${error.message}`, 'danger');
+  }
+}
+
+// ==================== CUSTOMER PETS ====================
+async function loadCustomerPetsForView() {
+  try {
+    // Ensure customer pets are loaded
+    await loadCustomerPets();
+    
+    if (!currentUser || currentUser.userType !== 'customer') {
+      document.getElementById('customer-pets-table-body').innerHTML = 
+        '<tr><td colspan="7" class="text-center text-danger">Please log in as a customer to view pets.</td></tr>';
+      return;
+    }
+
+    const tbody = document.getElementById('customer-pets-table-body');
+    
+    if (customerPets.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No pets found. Click "Add Pet" to create your first pet profile.</td></tr>';
+      return;
+    }
+    
+    // Sort by pet ID (or name if preferred)
+    customerPets.sort((a, b) => a.petId - b.petId);
+    
+    tbody.innerHTML = customerPets.map(pet => {
+      // Format birthdate
+      const birthDate = new Date(pet.birthDate);
+      const formattedBirthDate = birthDate.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit' 
+      });
+      
+      return `
+        <tr>
+          <td>${pet.petId}</td>
+          <td>${pet.name}</td>
+          <td>${pet.species}</td>
+          <td>${pet.breed || '-'}</td>
+          <td>${formattedBirthDate}</td>
+          <td>${pet.notes || '-'}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="editCustomerPet(${pet.petId})">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="deleteCustomerPet(${pet.petId})">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (error) {
+    showAlert(`Error loading pets: ${error.message}`, 'danger');
+    document.getElementById('customer-pets-table-body').innerHTML = 
+      '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
+  }
+}
+
+async function editCustomerPet(id) {
+  try {
+    // Verify the pet belongs to the logged-in customer
+    await loadCustomerPets();
+    const pet = customerPets.find(p => p.petId === id);
+    
+    if (!pet) {
+      showAlert('Pet not found or you do not have permission to edit this pet.', 'danger');
+      return;
+    }
+    
+    // Open the pet modal with the pet data
+    openPetModalForCustomer(pet);
+  } catch (error) {
+    showAlert(`Error loading pet: ${error.message}`, 'danger');
+  }
+}
+
+function openPetModalForCustomer(pet = null) {
+  const modal = new bootstrap.Modal(document.getElementById('petModal'));
+  const form = document.getElementById('petForm');
+  form.reset();
+  document.getElementById('petId').value = '';
+  
+  // Auto-fill customer ID for logged-in customer
+  if (currentUser && currentUser.userType === 'customer') {
+    document.getElementById('petCustomerId').value = currentUser.userId;
+    document.getElementById('petCustomerId').disabled = true; // Prevent changing customer ID
+  }
+  
+  if (pet) {
+    document.getElementById('petModalTitle').textContent = 'Edit Pet';
+    document.getElementById('petId').value = pet.petId;
+    document.getElementById('petCustomerId').value = pet.customerId;
+    document.getElementById('petCustomerId').disabled = true; // Prevent changing customer ID when editing
+    document.getElementById('petName').value = pet.name;
+    document.getElementById('petSpecies').value = pet.species;
+    document.getElementById('petBreed').value = pet.breed || '';
+    // Format birthdate for date input
+    const birthDate = new Date(pet.birthDate);
+    const year = birthDate.getFullYear();
+    const month = String(birthDate.getMonth() + 1).padStart(2, '0');
+    const day = String(birthDate.getDate()).padStart(2, '0');
+    document.getElementById('petBirthDate').value = `${year}-${month}-${day}`;
+    document.getElementById('petNotes').value = pet.notes || '';
+  } else {
+    document.getElementById('petModalTitle').textContent = 'Add Pet';
+  }
+  
+  modal.show();
+  
+  // Re-enable customer ID field when modal is hidden (for admin use)
+  const modalElement = document.getElementById('petModal');
+  modalElement.addEventListener('hidden.bs.modal', function onModalHidden() {
+    document.getElementById('petCustomerId').disabled = false;
+    modalElement.removeEventListener('hidden.bs.modal', onModalHidden);
+  }, { once: true });
+}
+
+function deleteCustomerPet(id) {
+  // Verify the pet belongs to the logged-in customer
+  loadCustomerPets().then(() => {
+    const pet = customerPets.find(p => p.petId === id);
+    if (!pet) {
+      showAlert('Pet not found or you do not have permission to delete this pet.', 'danger');
+      return;
+    }
+    
+    currentDeleteId = id;
+    currentDeleteEntity = 'Pet';
+    currentDeleteCallback = async () => {
+      try {
+        await apiCall(`Pet/${id}`, 'DELETE');
+        showAlert('Pet deleted successfully!');
+        // Reload customer pets view
+        await loadCustomerPetsForView();
+        // Also reload customer pets array for other functions
+        await loadCustomerPets();
+      } catch (error) {
+        showAlert(`Error deleting pet: ${error.message}`, 'danger');
+      }
+    };
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+  }).catch(error => {
+    showAlert(`Error: ${error.message}`, 'danger');
+  });
 }
 
