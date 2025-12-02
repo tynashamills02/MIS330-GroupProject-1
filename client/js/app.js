@@ -5,6 +5,7 @@ const API_BASE_URL = 'http://localhost:5172/api';
 let currentDeleteCallback = null;
 let currentDeleteId = null;
 let currentDeleteEntity = null;
+let currentUser = null; // Store logged in user info
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,6 +14,24 @@ document.addEventListener('DOMContentLoaded', () => {
   loadHomeStats();
   setupDeleteModal();
   setupCreateProfileForm();
+  setupLoginForm();
+  
+  // Check if user is logged in from sessionStorage
+  const savedUser = sessionStorage.getItem('currentUser');
+  if (savedUser) {
+    currentUser = JSON.parse(savedUser);
+    updateLoginLogoutButtons();
+    if (currentUser.userType === 'customer') {
+      showSection('customer-dashboard');
+    } else if (currentUser.userType === 'trainer') {
+      showSection('trainer-dashboard');
+    }
+  } else {
+    updateLoginLogoutButtons();
+  }
+  
+  // Initial visibility update
+  updateCreateProfileVisibility();
 });
 
 // Navigation Setup
@@ -67,6 +86,19 @@ function showSection(sectionName) {
         break;
       case 'bookings':
         loadBookings();
+        break;
+      case 'customer-dashboard':
+        updateCustomerDashboard();
+        break;
+      case 'customer-classes':
+        loadCustomerClasses();
+        break;
+      case 'trainer-dashboard':
+        updateTrainerDashboard();
+        break;
+      case 'login':
+        // Update create profile button visibility when login section is shown
+        updateCreateProfileVisibility();
         break;
     }
   }
@@ -945,7 +977,7 @@ async function saveProfileFromForm() {
   const form = document.getElementById('createProfileForm');
   if (!form.checkValidity()) {
     form.reportValidity();
-    return;
+    return false;
   }
   
   const customer = {
@@ -957,19 +989,15 @@ async function saveProfileFromForm() {
   
   try {
     await apiCall('Customer', 'POST', customer);
-    showAlert('Profile created successfully! You can now add pets and make bookings.', 'success');
     form.reset();
     
     // Update stats
     loadHomeStats();
     
-    // Optionally redirect to customers page
-    setTimeout(() => {
-      showSection('customers');
-      loadCustomers();
-    }, 2000);
+    return true;
   } catch (error) {
     showAlert(`Error creating profile: ${error.message}`, 'danger');
+    return false;
   }
 }
 
@@ -982,5 +1010,490 @@ function setupDeleteModal() {
       bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
     }
   });
+}
+
+// ==================== LOGIN FUNCTIONALITY ====================
+function setupLoginForm() {
+  const form = document.getElementById('loginForm');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await handleLogin();
+    });
+  }
+}
+
+async function handleLogin() {
+  const form = document.getElementById('loginForm');
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+
+  const loginData = {
+    firstName: document.getElementById('loginFirstName').value.trim(),
+    lastName: document.getElementById('loginLastName').value.trim(),
+    phoneNumber: document.getElementById('loginPhoneNumber').value.trim()
+  };
+
+  try {
+    const response = await apiCall('Login', 'POST', loginData);
+    
+    if (response && response.success) {
+      // Store user info
+      currentUser = response;
+      sessionStorage.setItem('currentUser', JSON.stringify(response));
+      
+      // Update login/logout buttons
+      updateLoginLogoutButtons();
+      
+      showAlert(`Welcome back, ${response.firstName} ${response.lastName}!`, 'success');
+      
+      // Redirect based on user type
+      if (response.userType === 'customer') {
+        setTimeout(() => {
+          showSection('customer-dashboard');
+          updateCustomerDashboard();
+        }, 1000);
+      } else if (response.userType === 'trainer') {
+        setTimeout(() => {
+          showSection('trainer-dashboard');
+          updateTrainerDashboard();
+        }, 1000);
+      }
+    } else {
+      showAlert('Invalid credentials. Please check your information and try again.', 'danger');
+    }
+  } catch (error) {
+    const errorMessage = error.message || 'Login failed. Please try again.';
+    showAlert(errorMessage, 'danger');
+  }
+}
+
+function updateCustomerDashboard() {
+  if (currentUser && currentUser.userType === 'customer') {
+    document.getElementById('customerDashboardName').textContent = 
+      `${currentUser.firstName} ${currentUser.lastName}`;
+    document.getElementById('customerDashboardPhone').textContent = currentUser.phoneNumber;
+  }
+}
+
+function updateTrainerDashboard() {
+  if (currentUser && currentUser.userType === 'trainer') {
+    document.getElementById('trainerDashboardName').textContent = 
+      `${currentUser.firstName} ${currentUser.lastName}`;
+    document.getElementById('trainerDashboardPhone').textContent = currentUser.phoneNumber;
+  }
+}
+
+function logout() {
+  currentUser = null;
+  sessionStorage.removeItem('currentUser');
+  
+  // Update login/logout buttons
+  updateLoginLogoutButtons();
+  
+  showAlert('You have been logged out successfully.', 'info');
+  setTimeout(() => {
+    showSection('home');
+  }, 1000);
+}
+
+// Update login/logout button visibility based on login state
+function updateLoginLogoutButtons() {
+  const loginNavItem = document.getElementById('login-nav-item');
+  const logoutNavItem = document.getElementById('logout-nav-item');
+  const viewProfileNavItem = document.getElementById('view-profile-nav-item');
+  
+  if (currentUser) {
+    // User is logged in - show logout and view profile, hide login
+    if (loginNavItem) loginNavItem.style.display = 'none';
+    if (logoutNavItem) logoutNavItem.style.display = 'block';
+    if (viewProfileNavItem) viewProfileNavItem.style.display = 'block';
+  } else {
+    // User is not logged in - show login, hide logout and view profile
+    if (loginNavItem) loginNavItem.style.display = 'block';
+    if (logoutNavItem) logoutNavItem.style.display = 'none';
+    if (viewProfileNavItem) viewProfileNavItem.style.display = 'none';
+  }
+  
+  // Update create profile visibility
+  updateCreateProfileVisibility();
+}
+
+// Update create profile visibility based on login state
+function updateCreateProfileVisibility() {
+  const createProfileBtn = document.getElementById('createProfileBtn');
+  
+  if (createProfileBtn) {
+    if (currentUser) {
+      // User is logged in - hide create profile button
+      createProfileBtn.style.display = 'none';
+    } else {
+      // User is not logged in - show create profile button
+      createProfileBtn.style.display = 'block';
+    }
+  }
+}
+
+// ==================== CREATE PROFILE MODAL ====================
+function openCreateProfileModal() {
+  if (currentUser) {
+    showAlert('You are already logged in.', 'info');
+    return;
+  }
+  
+  const modal = new bootstrap.Modal(document.getElementById('createProfileModal'));
+  const form = document.getElementById('createProfileForm');
+  form.reset();
+  modal.show();
+}
+
+async function submitCreateProfileModal() {
+  // Use the existing saveProfileFromForm function
+  const success = await saveProfileFromForm();
+  
+  if (success) {
+    // Close the modal after successful submission
+    const modal = bootstrap.Modal.getInstance(document.getElementById('createProfileModal'));
+    if (modal) {
+      modal.hide();
+    }
+    showAlert('Profile created successfully! You can now log in.', 'success');
+  }
+}
+
+// ==================== VIEW PROFILE ====================
+async function openViewProfileModal() {
+  if (!currentUser) {
+    showAlert('Please log in to view your profile.', 'warning');
+    showSection('login');
+    return;
+  }
+
+  const modal = new bootstrap.Modal(document.getElementById('viewProfileModal'));
+  
+  try {
+    let profileData;
+    
+    // Fetch profile data based on user type
+    if (currentUser.userType === 'customer') {
+      profileData = await apiCall(`Customer/${currentUser.userId}`);
+    } else if (currentUser.userType === 'trainer') {
+      profileData = await apiCall(`Trainer/${currentUser.userId}`);
+    } else {
+      showAlert('Unable to load profile information.', 'danger');
+      return;
+    }
+    
+    // Populate profile modal
+    document.getElementById('profileName').textContent = 
+      `${profileData.firstName} ${profileData.lastName}`;
+    document.getElementById('profileUserType').textContent = 
+      currentUser.userType.charAt(0).toUpperCase() + currentUser.userType.slice(1);
+    document.getElementById('profileFirstName').textContent = profileData.firstName || '-';
+    document.getElementById('profileLastName').textContent = profileData.lastName || '-';
+    document.getElementById('profilePhone').textContent = profileData.phoneNum || '-';
+    
+    // Show/hide user type specific details
+    if (currentUser.userType === 'customer') {
+      document.getElementById('profileCustomerDetails').style.display = 'block';
+      document.getElementById('profileTrainerDetails').style.display = 'none';
+      document.getElementById('profileAddress').textContent = profileData.address || 'Not provided';
+    } else if (currentUser.userType === 'trainer') {
+      document.getElementById('profileCustomerDetails').style.display = 'none';
+      document.getElementById('profileTrainerDetails').style.display = 'block';
+      document.getElementById('profileSpeciality').textContent = profileData.speciality || 'Not specified';
+    }
+    
+    modal.show();
+  } catch (error) {
+    showAlert(`Error loading profile: ${error.message}`, 'danger');
+  }
+}
+
+// ==================== CUSTOMER CLASSES PAGE ====================
+let allCustomerClasses = [];
+let customerPets = [];
+
+async function loadCustomerClasses() {
+  try {
+    const classes = await apiCall('Class');
+    allCustomerClasses = classes || [];
+    
+    // Populate filter dropdowns
+    populateCustomerFilters();
+    
+    // Load customer pets
+    await loadCustomerPets();
+    
+    // Display classes
+    filterCustomerClasses();
+  } catch (error) {
+    showAlert(`Error loading classes: ${error.message}`, 'danger');
+    document.getElementById('customer-classes-container').innerHTML = 
+      '<div class="col-12 text-center text-danger">Error loading classes</div>';
+  }
+}
+
+function populateCustomerFilters() {
+  const typeSelect = document.getElementById('filterType');
+  const categorySelect = document.getElementById('filterCategory');
+  
+  // Get unique types and categories
+  const types = [...new Set(allCustomerClasses.map(c => c.classType).filter(Boolean))];
+  const categories = [...new Set(allCustomerClasses.map(c => c.category).filter(Boolean))];
+  
+  // Populate type filter
+  types.forEach(type => {
+    const option = document.createElement('option');
+    option.value = type;
+    option.textContent = type;
+    typeSelect.appendChild(option);
+  });
+  
+  // Populate category filter
+  categories.forEach(category => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category;
+    categorySelect.appendChild(option);
+  });
+}
+
+async function loadCustomerPets() {
+  if (!currentUser || currentUser.userType !== 'customer') {
+    customerPets = [];
+    return;
+  }
+  
+  try {
+    const pets = await apiCall('Pet');
+    customerPets = (pets || []).filter(pet => pet.customerId === currentUser.userId);
+  } catch (error) {
+    console.error('Error loading pets:', error);
+    customerPets = [];
+  }
+}
+
+function filterCustomerClasses() {
+  const searchTitle = document.getElementById('searchTitle').value.toLowerCase();
+  const filterType = document.getElementById('filterType').value;
+  const filterCategory = document.getElementById('filterCategory').value;
+  const filterDate = document.getElementById('filterDate').value;
+  const filterTrainer = document.getElementById('filterTrainer').value;
+  
+  let filtered = allCustomerClasses.filter(cls => {
+    const matchesTitle = !searchTitle || cls.title.toLowerCase().includes(searchTitle) || 
+                        cls.classType.toLowerCase().includes(searchTitle);
+    const matchesType = !filterType || cls.classType === filterType;
+    const matchesCategory = !filterCategory || cls.category === filterCategory;
+    const matchesDate = !filterDate || cls.startDate.startsWith(filterDate);
+    const matchesTrainer = !filterTrainer || cls.trainerId.toString() === filterTrainer;
+    
+    return matchesTitle && matchesType && matchesCategory && matchesDate && matchesTrainer;
+  });
+  
+  displayCustomerClasses(filtered);
+}
+
+function clearCustomerFilters() {
+  document.getElementById('searchTitle').value = '';
+  document.getElementById('filterType').value = '';
+  document.getElementById('filterCategory').value = '';
+  document.getElementById('filterDate').value = '';
+  document.getElementById('filterTrainer').value = '';
+  filterCustomerClasses();
+}
+
+function displayCustomerClasses(classes) {
+  const container = document.getElementById('customer-classes-container');
+  
+  if (!classes || classes.length === 0) {
+    container.innerHTML = '<div class="col-12 text-center text-muted">No classes found matching your criteria.</div>';
+    return;
+  }
+  
+  container.innerHTML = classes.map(cls => {
+    const startDate = new Date(cls.startDate);
+    const endDate = new Date(cls.endDate);
+    const startTime = cls.startTime || '-';
+    const endTime = cls.endTime || '-';
+    
+    return `
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm customer-class-card">
+          <div class="card-body">
+            <h5 class="card-title">${cls.title}</h5>
+            <p class="text-muted mb-2"><strong>Type:</strong> ${cls.classType}</p>
+            ${cls.category ? `<p class="text-muted mb-2"><strong>Category:</strong> ${cls.category}</p>` : ''}
+            <p class="text-muted mb-2"><strong>Trainer ID:</strong> ${cls.trainerId}</p>
+            <p class="text-muted mb-2"><strong>Location:</strong> ${cls.location}</p>
+            <p class="text-muted mb-2"><strong>Date:</strong> ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}</p>
+            <p class="text-muted mb-2"><strong>Time:</strong> ${startTime} - ${endTime}</p>
+            <p class="text-muted mb-2"><strong>Capacity:</strong> ${cls.maxCapacity} spots</p>
+            <p class="text-primary mb-3"><strong>Price:</strong> $${parseFloat(cls.price).toFixed(2)}</p>
+            ${cls.description ? `<p class="card-text small text-muted mb-3">${cls.description.substring(0, 100)}${cls.description.length > 100 ? '...' : ''}</p>` : ''}
+            <div class="d-grid gap-2">
+              <button class="btn btn-primary" onclick="openCustomerBookingModal(${cls.classId}, ${parseFloat(cls.price).toFixed(2)})">
+                <i class="bi bi-calendar-check"></i> Book Class
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openCustomerBookingModal(classId, price) {
+  if (!currentUser || currentUser.userType !== 'customer') {
+    showAlert('Please log in as a customer to book classes.', 'warning');
+    showSection('login');
+    return;
+  }
+  
+  // Load pets if not already loaded
+  if (customerPets.length === 0) {
+    loadCustomerPets();
+  }
+  
+  const modal = new bootstrap.Modal(document.getElementById('customerBookingModal'));
+  const form = document.getElementById('customerBookingForm');
+  form.reset();
+  
+  document.getElementById('customerBookingClassId').value = classId;
+  document.getElementById('customerBookingAmount').value = price || '0.00';
+  
+  // Populate pets dropdown
+  const petSelect = document.getElementById('customerBookingPet');
+  petSelect.innerHTML = '<option value="">-- Select a pet --</option>';
+  
+  if (customerPets.length === 0) {
+    petSelect.innerHTML = '<option value="">No pets available. Please add a pet first.</option>';
+    petSelect.disabled = true;
+  } else {
+    customerPets.forEach(pet => {
+      const option = document.createElement('option');
+      option.value = pet.petId;
+      option.textContent = `${pet.name} (${pet.species}${pet.breed ? ' - ' + pet.breed : ''})`;
+      petSelect.appendChild(option);
+    });
+    petSelect.disabled = false;
+  }
+  
+  // Set default booking date to now
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('customerBookingDate').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+  
+  modal.show();
+}
+
+async function submitCustomerBooking() {
+  const form = document.getElementById('customerBookingForm');
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+  
+  if (!currentUser || currentUser.userType !== 'customer') {
+    showAlert('Please log in as a customer to book classes.', 'warning');
+    return;
+  }
+  
+  // Get first available employee ID (you might want to improve this)
+  let employeeId = 1;
+  try {
+    const employees = await apiCall('Employee');
+    if (employees && employees.length > 0) {
+      employeeId = employees[0].employeeId;
+    }
+  } catch (error) {
+    console.error('Error getting employee:', error);
+  }
+  
+  const booking = {
+    classId: parseInt(document.getElementById('customerBookingClassId').value),
+    petId: parseInt(document.getElementById('customerBookingPet').value),
+    employeeId: employeeId,
+    bookingDate: document.getElementById('customerBookingDate').value,
+    status: document.getElementById('customerBookingStatus').value,
+    paymentStatus: document.getElementById('customerBookingPaymentStatus').value,
+    amountPaid: parseFloat(document.getElementById('customerBookingAmount').value)
+  };
+  
+  try {
+    await apiCall('Booking', 'POST', booking);
+    showAlert('Class booked successfully!', 'success');
+    bootstrap.Modal.getInstance(document.getElementById('customerBookingModal')).hide();
+    
+    // Reload pets in case a new one was added
+    await loadCustomerPets();
+  } catch (error) {
+    showAlert(`Error booking class: ${error.message}`, 'danger');
+  }
+}
+
+function openCustomerPetModal() {
+  if (!currentUser || currentUser.userType !== 'customer') {
+    showAlert('Please log in as a customer to add pets.', 'warning');
+    showSection('login');
+    return;
+  }
+  
+  const modal = new bootstrap.Modal(document.getElementById('customerPetModal'));
+  const form = document.getElementById('customerPetForm');
+  form.reset();
+  modal.show();
+}
+
+async function submitCustomerPet() {
+  const form = document.getElementById('customerPetForm');
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+  
+  if (!currentUser || currentUser.userType !== 'customer') {
+    showAlert('Please log in as a customer to add pets.', 'warning');
+    return;
+  }
+  
+  const pet = {
+    customerId: currentUser.userId,
+    name: document.getElementById('customerPetName').value,
+    species: document.getElementById('customerPetSpecies').value,
+    breed: document.getElementById('customerPetBreed').value || null,
+    birthDate: document.getElementById('customerPetBirthDate').value,
+    notes: document.getElementById('customerPetNotes').value || null
+  };
+  
+  try {
+    await apiCall('Pet', 'POST', pet);
+    showAlert('Pet added successfully!', 'success');
+    bootstrap.Modal.getInstance(document.getElementById('customerPetModal')).hide();
+    
+    // Reload pets
+    await loadCustomerPets();
+    
+    // If booking modal was open, refresh it
+    const bookingModalElement = document.getElementById('customerBookingModal');
+    const bookingModal = bootstrap.Modal.getInstance(bookingModalElement);
+    if (bookingModal && bookingModalElement.classList.contains('show')) {
+      const classId = document.getElementById('customerBookingClassId').value;
+      const amount = document.getElementById('customerBookingAmount').value;
+      bootstrap.Modal.getInstance(document.getElementById('customerPetModal')).hide();
+      setTimeout(() => {
+        openCustomerBookingModal(parseInt(classId), parseFloat(amount));
+      }, 300);
+    }
+  } catch (error) {
+    showAlert(`Error adding pet: ${error.message}`, 'danger');
+  }
 }
 

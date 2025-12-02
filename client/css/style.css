@@ -602,10 +602,13 @@ body {
   margin-bottom: 0;
 }
 
-/* ========== Create Profile Section ========== */
-#create-profile-section .card {
-  max-width: 800px;
-  margin: 0 auto;
+/* ========== Create Profile Modal ========== */
+#createProfileModal .modal-body {
+  padding: 2rem;
+}
+
+#createProfileModal .alert {
+  margin-bottom: 1.5rem;
 }
 
 /* ========== Responsive Design ========== */
@@ -700,7 +703,213 @@ html {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
-/* ========== Print Styles ========== */
+/* ========== Login Page ========== */
+#login-section {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+}
+
+#login-section .card {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#loginForm .form-control {
+  margin-bottom: 1rem;
+}
+
+#loginForm .btn-lg {
+  margin-top: 1rem;
+}
+
+/* ========== Dashboard Sections ========== */
+#customer-dashboard-section .card,
+#trainer-dashboard-section .card {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+#customer-dashboard-section .card-body .card,
+#trainer-dashboard-section .card-body .card {
+  transition: var(--transition);
+  border: 2px solid transparent;
+}
+
+#customer-dashboard-section .card-body .card:hover,
+#trainer-dashboard-section .card-body .card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+#customer-dashboard-section .card-body .card i,
+#trainer-dashboard-section .card-body .card i {
+  transition: var(--transition);
+}
+
+#customer-dashboard-section .card-body .card:hover i,
+#trainer-dashboard-section .card-body .card:hover i {
+  transform: scale(1.1);
+}
+
+/* ========== Customer Classes Page ========== */
+#customer-classes-section {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.customer-class-card {
+  transition: var(--transition);
+  border: 2px solid transparent;
+}
+
+.customer-class-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.customer-class-card .card-title {
+  color: var(--primary-color);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.customer-class-card .card-text {
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+#customer-classes-container {
+  min-height: 400px;
+}
+
+/* Filter Section */
+#customer-classes-section .card.shadow-sm {
+  background: var(--bg-primary);
+  margin-bottom: 2rem;
+}
+
+#customer-classes-section .form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+#customer-classes-section .form-control,
+#customer-classes-section .form-select {
+  font-size: 0.95rem;
+}
+
+/* Booking Modal Enhancements */
+#customerBookingModal .modal-body {
+  padding: 2rem;
+}
+
+#customerBookingModal .form-label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+#customerBookingModal small {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+#customerBookingModal small a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+#customerBookingModal small a:hover {
+  text-decoration: underline;
+}
+
+/* Pet Modal */
+#customerPetModal .modal-body {
+  padding: 2rem;
+}
+
+#customerPetModal textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* View Profile Modal */
+#viewProfileModal .modal-body {
+  padding: 2rem;
+}
+
+#viewProfileModal .profile-details {
+  padding: 1rem 0;
+}
+
+#viewProfileModal .profile-details .row {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+#viewProfileModal .profile-details .row:last-child {
+  border-bottom: none;
+}
+
+#viewProfileModal .profile-details strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+#viewProfileModal .profile-details strong i {
+  margin-right: 0.5rem;
+  color: var(--primary-color);
+}
+
+#viewProfileModal .profile-details .col-8 {
+  color: var(--text-secondary);
+}
+
+#viewProfileModal .badge {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+}
+
+#viewProfileModal h4 {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* Responsive adjustments for customer classes */
+@media (max-width: 768px) {
+  .customer-class-card {
+    margin-bottom: 1.5rem;
+  }
+  
+  #customer-classes-section .card.shadow-sm .row {
+    margin: 0;
+  }
+  
+  #customer-classes-section .card.shadow-sm .col-md-3,
+  #customer-classes-section .card.shadow-sm .col-md-2,
+  #customer-classes-section .card.shadow-sm .col-md-1 {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Print Styles ========== */
 @media print {
   .navbar,
   .btn,
