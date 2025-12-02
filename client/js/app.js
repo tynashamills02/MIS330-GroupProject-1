@@ -9,22 +9,26 @@ let currentDeleteEntity = null;
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   initializeNavigation();
-  loadCustomers();
+  showSection('home');
+  loadHomeStats();
   setupDeleteModal();
+  setupCreateProfileForm();
 });
 
 // Navigation Setup
 function initializeNavigation() {
-  const navLinks = document.querySelectorAll('.nav-link[data-section]');
+  const navLinks = document.querySelectorAll('.nav-link[data-section], .dropdown-item[data-section]');
   navLinks.forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const section = link.getAttribute('data-section');
       showSection(section);
       
-      // Update active nav link
-      navLinks.forEach(nl => nl.classList.remove('active'));
-      link.classList.add('active');
+      // Update active nav link (only for main nav, not dropdown)
+      if (link.classList.contains('nav-link')) {
+        document.querySelectorAll('.nav-link[data-section]').forEach(nl => nl.classList.remove('active'));
+        link.classList.add('active');
+      }
     });
   });
 }
@@ -43,6 +47,9 @@ function showSection(sectionName) {
     
     // Load data for the section
     switch(sectionName) {
+      case 'home':
+        loadHomeStats();
+        break;
       case 'customers':
         loadCustomers();
         break;
@@ -62,6 +69,13 @@ function showSection(sectionName) {
         loadBookings();
         break;
     }
+  }
+  
+  // Update active nav link
+  const navLink = document.querySelector(`.nav-link[data-section="${sectionName}"]`);
+  if (navLink) {
+    document.querySelectorAll('.nav-link[data-section]').forEach(nl => nl.classList.remove('active'));
+    navLink.classList.add('active');
   }
 }
 
@@ -890,6 +904,73 @@ function deleteBooking(id) {
   
   const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
   modal.show();
+}
+
+// ==================== HOME STATS ====================
+async function loadHomeStats() {
+  try {
+    const [customers, pets, classes, bookings] = await Promise.all([
+      apiCall('Customer').catch(() => []),
+      apiCall('Pet').catch(() => []),
+      apiCall('Class').catch(() => []),
+      apiCall('Booking').catch(() => [])
+    ]);
+    
+    document.getElementById('stat-customers').textContent = customers.length || 0;
+    document.getElementById('stat-pets').textContent = pets.length || 0;
+    document.getElementById('stat-classes').textContent = classes.length || 0;
+    document.getElementById('stat-bookings').textContent = bookings.length || 0;
+  } catch (error) {
+    console.error('Error loading stats:', error);
+    // Set to 0 if error
+    document.getElementById('stat-customers').textContent = '0';
+    document.getElementById('stat-pets').textContent = '0';
+    document.getElementById('stat-classes').textContent = '0';
+    document.getElementById('stat-bookings').textContent = '0';
+  }
+}
+
+// ==================== CREATE PROFILE FORM ====================
+function setupCreateProfileForm() {
+  const form = document.getElementById('createProfileForm');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveProfileFromForm();
+    });
+  }
+}
+
+async function saveProfileFromForm() {
+  const form = document.getElementById('createProfileForm');
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+  
+  const customer = {
+    firstName: document.getElementById('profileFirstName').value,
+    lastName: document.getElementById('profileLastName').value,
+    phoneNum: document.getElementById('profilePhone').value,
+    address: document.getElementById('profileAddress').value || null
+  };
+  
+  try {
+    await apiCall('Customer', 'POST', customer);
+    showAlert('Profile created successfully! You can now add pets and make bookings.', 'success');
+    form.reset();
+    
+    // Update stats
+    loadHomeStats();
+    
+    // Optionally redirect to customers page
+    setTimeout(() => {
+      showSection('customers');
+      loadCustomers();
+    }, 2000);
+  } catch (error) {
+    showAlert(`Error creating profile: ${error.message}`, 'danger');
+  }
 }
 
 // ==================== DELETE MODAL SETUP ====================

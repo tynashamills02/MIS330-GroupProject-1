@@ -12,43 +12,49 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">
+        <a class="navbar-brand" href="#" data-section="home" onclick="showSection('home'); return false;">
           <i class="bi bi-heart-pulse"></i> Happy Paws Training
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav">
+          <ul class="navbar-nav me-auto">
             <li class="nav-item">
-              <a class="nav-link active" href="#" data-section="customers">
-                <i class="bi bi-people"></i> Customers
+              <a class="nav-link active" href="#" data-section="home">
+                <i class="bi bi-house-door"></i> Home
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" data-section="pets">
-                <i class="bi bi-heart"></i> Pets
+              <a class="nav-link" href="#" data-section="create-profile">
+                <i class="bi bi-person-plus"></i> Create Profile
               </a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-section="trainers">
-                <i class="bi bi-person-badge"></i> Trainers
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                <i class="bi bi-list-ul"></i> Management
               </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-section="employees">
-                <i class="bi bi-person-workspace"></i> Employees
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-section="classes">
-                <i class="bi bi-calendar-event"></i> Classes
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" data-section="bookings">
-                <i class="bi bi-calendar-check"></i> Bookings
-              </a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" data-section="customers">
+                  <i class="bi bi-people"></i> Customers
+                </a></li>
+                <li><a class="dropdown-item" href="#" data-section="pets">
+                  <i class="bi bi-heart"></i> Pets
+                </a></li>
+                <li><a class="dropdown-item" href="#" data-section="trainers">
+                  <i class="bi bi-person-badge"></i> Trainers
+                </a></li>
+                <li><a class="dropdown-item" href="#" data-section="employees">
+                  <i class="bi bi-person-workspace"></i> Employees
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" data-section="classes">
+                  <i class="bi bi-calendar-event"></i> Classes
+                </a></li>
+                <li><a class="dropdown-item" href="#" data-section="bookings">
+                  <i class="bi bi-calendar-check"></i> Bookings
+                </a></li>
+              </ul>
             </li>
           </ul>
         </div>
@@ -60,8 +66,153 @@
       <!-- Alert Container -->
       <div id="alertContainer"></div>
 
+      <!-- Homepage Section -->
+      <div id="home-section" class="content-section">
+        <div class="row">
+          <div class="col-12">
+            <div class="jumbotron bg-light p-5 rounded mb-4">
+              <h1 class="display-4">
+                <i class="bi bi-heart-pulse text-primary"></i> Welcome to Happy Paws Training
+              </h1>
+              <p class="lead">Your one-stop solution for managing pet training classes, bookings, and customer profiles.</p>
+              <hr class="my-4">
+              <p>Get started by creating a profile or explore our management tools.</p>
+              <div class="d-flex gap-2 flex-wrap">
+                <a class="btn btn-primary btn-lg" href="#" data-section="create-profile" onclick="showSection('create-profile'); return false;">
+                  <i class="bi bi-person-plus"></i> Create Profile
+                </a>
+                <a class="btn btn-outline-primary btn-lg" href="#" data-section="classes" onclick="showSection('classes'); return false;">
+                  <i class="bi bi-calendar-event"></i> View Classes
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">
+                  <i class="bi bi-people text-primary"></i> Customer Management
+                </h5>
+                <p class="card-text">Manage customer profiles, contact information, and account details.</p>
+                <a href="#" class="btn btn-outline-primary" data-section="customers" onclick="showSection('customers'); return false;">
+                  Manage Customers <i class="bi bi-arrow-right"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">
+                  <i class="bi bi-heart text-danger"></i> Pet Profiles
+                </h5>
+                <p class="card-text">Track pet information, species, breeds, and training history.</p>
+                <a href="#" class="btn btn-outline-danger" data-section="pets" onclick="showSection('pets'); return false;">
+                  Manage Pets <i class="bi bi-arrow-right"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">
+                  <i class="bi bi-calendar-check text-success"></i> Bookings
+                </h5>
+                <p class="card-text">View and manage class bookings, payments, and schedules.</p>
+                <a href="#" class="btn btn-outline-success" data-section="bookings" onclick="showSection('bookings'); return false;">
+                  Manage Bookings <i class="bi bi-arrow-right"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card shadow-sm">
+              <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Quick Stats</h5>
+              </div>
+              <div class="card-body">
+                <div class="row text-center" id="home-stats">
+                  <div class="col-md-3">
+                    <h3 class="text-primary" id="stat-customers">-</h3>
+                    <p class="text-muted">Customers</p>
+                  </div>
+                  <div class="col-md-3">
+                    <h3 class="text-danger" id="stat-pets">-</h3>
+                    <p class="text-muted">Pets</p>
+                  </div>
+                  <div class="col-md-3">
+                    <h3 class="text-success" id="stat-classes">-</h3>
+                    <p class="text-muted">Classes</p>
+                  </div>
+                  <div class="col-md-3">
+                    <h3 class="text-warning" id="stat-bookings">-</h3>
+                    <p class="text-muted">Bookings</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create Profile Section -->
+      <div id="create-profile-section" class="content-section" style="display: none;">
+        <div class="row justify-content-center">
+          <div class="col-md-8">
+            <div class="card shadow-sm">
+              <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Create New Customer Profile</h4>
+              </div>
+              <div class="card-body">
+                <form id="createProfileForm">
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label for="profileFirstName" class="form-label">First Name *</label>
+                      <input type="text" class="form-control" id="profileFirstName" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label for="profileLastName" class="form-label">Last Name *</label>
+                      <input type="text" class="form-control" id="profileLastName" required>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label for="profilePhone" class="form-label">Phone Number *</label>
+                    <input type="tel" class="form-control" id="profilePhone" placeholder="(555) 123-4567" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="profileAddress" class="form-label">Address</label>
+                    <input type="text" class="form-control" id="profileAddress" placeholder="123 Main St, City, State ZIP">
+                  </div>
+                  <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> After creating your profile, you can add pets and make bookings.
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="bi bi-check-circle"></i> Create Profile
+                    </button>
+                    <button type="reset" class="btn btn-outline-secondary">
+                      <i class="bi bi-arrow-counterclockwise"></i> Reset
+                    </button>
+                    <a href="#" class="btn btn-outline-primary" onclick="showSection('home'); return false;">
+                      <i class="bi bi-house-door"></i> Back to Home
+                    </a>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Customers Section -->
-      <div id="customers-section" class="content-section">
+      <div id="customers-section" class="content-section" style="display: none;">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h2><i class="bi bi-people"></i> Customers</h2>
           <button class="btn btn-primary" onclick="openCustomerModal()">
