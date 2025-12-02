@@ -76,6 +76,38 @@ public class LoginController : ControllerBase
                 });
             }
 
+            await trainerReader.CloseAsync();
+
+            // Check in Employee table for admin
+            var employeeCommand = new MySqlCommand(
+                "SELECT empid, firstname, lastname, position FROM Employee WHERE firstname = @firstname AND lastname = @lastname",
+                _connection);
+            employeeCommand.Parameters.AddWithValue("@firstname", request.FirstName);
+            employeeCommand.Parameters.AddWithValue("@lastname", request.LastName);
+
+            using var employeeReader = await employeeCommand.ExecuteReaderAsync();
+            if (await employeeReader.ReadAsync())
+            {
+                // Check if phone number matches admin phone
+                if (request.PhoneNumber == "111-111-1111")
+                {
+                    return Ok(new LoginResponse
+                    {
+                        Success = true,
+                        UserType = "admin",
+                        UserId = employeeReader.GetInt32("empid"),
+                        FirstName = employeeReader.GetString("firstname"),
+                        LastName = employeeReader.GetString("lastname"),
+                        PhoneNumber = request.PhoneNumber
+                    });
+                }
+                else
+                {
+                    // Employee exists but phone doesn't match admin phone
+                    return Unauthorized(new { message = "Invalid credentials. Please check your first name, last name, and phone number." });
+                }
+            }
+
             // Credentials not found
             return Unauthorized(new { message = "Invalid credentials. Please check your first name, last name, and phone number." });
         }
@@ -101,7 +133,7 @@ public class LoginRequest
 public class LoginResponse
 {
     public bool Success { get; set; }
-    public string UserType { get; set; } = string.Empty; // "customer" or "trainer"
+    public string UserType { get; set; } = string.Empty; // "customer", "trainer", or "admin"
     public int UserId { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;

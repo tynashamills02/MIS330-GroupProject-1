@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
       showSection('customer-dashboard');
     } else if (currentUser.userType === 'trainer') {
       showSection('trainer-dashboard');
+    } else if (currentUser.userType === 'admin' && checkAdminAccess()) {
+      showSection('admin');
     }
   } else {
     updateLoginLogoutButtons();
@@ -60,7 +62,11 @@ function showSection(sectionName) {
   });
   
   // Show selected section
-  const targetSection = document.getElementById(`${sectionName}-section`);
+  let targetSection = document.getElementById(`${sectionName}-section`);
+  // Handle admin section (no -section suffix)
+  if (!targetSection && sectionName === 'admin') {
+    targetSection = document.getElementById('admin-section');
+  }
   if (targetSection) {
     targetSection.style.display = 'block';
     
@@ -99,6 +105,15 @@ function showSection(sectionName) {
       case 'login':
         // Update create profile button visibility when login section is shown
         updateCreateProfileVisibility();
+        break;
+      case 'admin':
+        // Check admin access before showing admin section
+        if (!checkAdminAccess()) {
+          showSection('login');
+          showAlert('Admin access required. Please log in as an admin.', 'warning');
+          return;
+        }
+        loadAdminData();
         break;
     }
   }
@@ -640,7 +655,25 @@ function deleteEmployee(id) {
 async function loadClasses() {
   try {
     const classes = await apiCall('Class');
-    const tbody = document.getElementById('classes-table-body');
+    // Find table body in classes-section (for homepage) or admin section
+    const classesSection = document.getElementById('classes-section');
+    const adminSection = document.getElementById('admin-section');
+    let tbody = null;
+    
+    // Prioritize classes-section if it's visible, otherwise use admin section
+    if (classesSection && classesSection.style.display !== 'none') {
+      tbody = classesSection.querySelector('#classes-table-body');
+    } else if (adminSection && adminSection.style.display !== 'none') {
+      tbody = adminSection.querySelector('#classes-table-body');
+    } else {
+      // Fallback to first found
+      tbody = document.getElementById('classes-table-body');
+    }
+    
+    if (!tbody) {
+      console.error('Classes table body not found');
+      return;
+    }
     
     if (classes.length === 0) {
       tbody.innerHTML = '<tr><td colspan="10" class="text-center">No classes found</td></tr>';
@@ -674,8 +707,21 @@ async function loadClasses() {
     }).join('');
   } catch (error) {
     showAlert(`Error loading classes: ${error.message}`, 'danger');
-    document.getElementById('classes-table-body').innerHTML = 
-      '<tr><td colspan="10" class="text-center text-danger">Error loading data</td></tr>';
+    const classesSection = document.getElementById('classes-section');
+    const adminSection = document.getElementById('admin-section');
+    let tbody = null;
+    
+    if (classesSection && classesSection.style.display !== 'none') {
+      tbody = classesSection.querySelector('#classes-table-body');
+    } else if (adminSection && adminSection.style.display !== 'none') {
+      tbody = adminSection.querySelector('#classes-table-body');
+    } else {
+      tbody = document.getElementById('classes-table-body');
+    }
+    
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading data</td></tr>';
+    }
   }
 }
 
@@ -1023,6 +1069,17 @@ function setupLoginForm() {
   }
 }
 
+// Clear login form fields
+function clearLoginForm() {
+  const firstNameField = document.getElementById('loginFirstName');
+  const lastNameField = document.getElementById('loginLastName');
+  const phoneField = document.getElementById('loginPhoneNumber');
+  
+  if (firstNameField) firstNameField.value = '';
+  if (lastNameField) lastNameField.value = '';
+  if (phoneField) phoneField.value = '';
+}
+
 async function handleLogin() {
   const form = document.getElementById('loginForm');
   if (!form.checkValidity()) {
@@ -1060,6 +1117,13 @@ async function handleLogin() {
           showSection('trainer-dashboard');
           updateTrainerDashboard();
         }, 1000);
+      } else if (response.userType === 'admin') {
+        // Set admin flag in localStorage
+        localStorage.setItem('isAdminLoggedIn', 'true');
+        setTimeout(() => {
+          showSection('admin');
+          loadAdminData();
+        }, 1000);
       }
     } else {
       showAlert('Invalid credentials. Please check your information and try again.', 'danger');
@@ -1090,6 +1154,9 @@ function logout() {
   currentUser = null;
   sessionStorage.removeItem('currentUser');
   
+  // Clear login form fields
+  clearLoginForm();
+  
   // Update login/logout buttons
   updateLoginLogoutButtons();
   
@@ -1097,6 +1164,76 @@ function logout() {
   setTimeout(() => {
     showSection('home');
   }, 1000);
+}
+
+// ==================== ADMIN FUNCTIONALITY ====================
+function checkAdminAccess() {
+  const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn');
+  return isAdminLoggedIn === 'true';
+}
+
+function adminLogout() {
+  localStorage.removeItem('isAdminLoggedIn');
+  currentUser = null;
+  sessionStorage.removeItem('currentUser');
+  
+  // Clear login form fields
+  clearLoginForm();
+  
+  updateLoginLogoutButtons();
+  showAlert('You have been logged out successfully.', 'info');
+  setTimeout(() => {
+    showSection('home');
+  }, 1000);
+}
+
+function loadAdminData() {
+  // Load data for the active tab
+  const activeTab = document.querySelector('#adminTabs .nav-link.active');
+  if (activeTab) {
+    const targetId = activeTab.getAttribute('data-bs-target');
+    if (targetId === '#admin-customers-pane') {
+      loadCustomers();
+    } else if (targetId === '#admin-pets-pane') {
+      loadPets();
+    } else if (targetId === '#admin-trainers-pane') {
+      loadTrainers();
+    } else if (targetId === '#admin-employees-pane') {
+      loadEmployees();
+    } else if (targetId === '#admin-classes-pane') {
+      loadClasses();
+    } else if (targetId === '#admin-bookings-pane') {
+      loadBookings();
+    }
+  } else {
+    // Default to customers
+    loadCustomers();
+  }
+  
+  // Set up tab change listeners (only once)
+  const adminTabs = document.getElementById('adminTabs');
+  if (adminTabs && !adminTabs.dataset.listenersAttached) {
+    adminTabs.dataset.listenersAttached = 'true';
+    const tabButtons = document.querySelectorAll('#adminTabs .nav-link');
+    tabButtons.forEach(button => {
+      button.addEventListener('shown.bs.tab', (e) => {
+        const targetId = e.target.getAttribute('data-bs-target');
+        if (targetId === '#admin-customers-pane') {
+          loadCustomers();
+        } else if (targetId === '#admin-pets-pane') {
+          loadPets();
+        } else if (targetId === '#admin-trainers-pane') {
+          loadTrainers();
+        } else if (targetId === '#admin-employees-pane') {
+          loadEmployees();
+        } else if (targetId === '#admin-classes-pane') {
+          loadClasses();
+        } else if (targetId === '#admin-bookings-pane') {
+          loadBookings();
+        }
+      });
+    });
+  }
 }
 
 // Update login/logout button visibility based on login state

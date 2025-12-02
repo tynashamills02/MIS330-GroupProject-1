@@ -583,23 +583,85 @@ body {
 
 /* ========== Stats Section ========== */
 #home-stats {
-  padding: 1.5rem 0;
+  padding: 0;
 }
 
-#home-stats h3 {
-  font-size: 3rem;
+.stat-card {
+  border: none;
+  border-radius: var(--border-radius-lg);
+  transition: var(--transition);
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-xl) !important;
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-card:nth-child(1) .stat-icon {
+  color: var(--primary-color);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+  color: var(--danger-color);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+  color: var(--success-color);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+  color: var(--warning-color);
+}
+
+.stat-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  transition: var(--transition);
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.1);
+}
+
+.stat-number {
+  font-size: 3.5rem;
   font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -2px;
   margin-bottom: 0.5rem;
-  letter-spacing: -1px;
+  line-height: 1;
 }
 
-#home-stats p {
+.stat-label {
   color: var(--text-secondary);
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.875rem;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   margin-bottom: 0;
+}
+
+.stat-card .card-body {
+  padding: 2rem 1.5rem;
 }
 
 /* ========== Create Profile Modal ========== */

@@ -41,32 +41,6 @@
                 <i class="bi bi-person-circle"></i> View Profile
               </a>
             </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                <i class="bi bi-list-ul"></i> Management
-              </a>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" data-section="customers">
-                  <i class="bi bi-people"></i> Customers
-                </a></li>
-                <li><a class="dropdown-item" href="#" data-section="pets">
-                  <i class="bi bi-heart"></i> Pets
-                </a></li>
-                <li><a class="dropdown-item" href="#" data-section="trainers">
-                  <i class="bi bi-person-badge"></i> Trainers
-                </a></li>
-                <li><a class="dropdown-item" href="#" data-section="employees">
-                  <i class="bi bi-person-workspace"></i> Employees
-                </a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#" data-section="classes">
-                  <i class="bi bi-calendar-event"></i> Classes
-                </a></li>
-                <li><a class="dropdown-item" href="#" data-section="bookings">
-                  <i class="bi bi-calendar-check"></i> Bookings
-                </a></li>
-              </ul>
-            </li>
           </ul>
         </div>
       </div>
@@ -532,7 +506,7 @@
                 <a class="btn btn-primary btn-lg" href="#" onclick="openCreateProfileModal(); return false;">
                   <i class="bi bi-person-plus"></i> Create Profile
                 </a>
-                <a class="btn btn-outline-primary btn-lg" href="#" data-section="classes" onclick="showSection('classes'); return false;">
+                <a class="btn btn-outline-primary btn-lg" href="#" data-section="classes" onclick="showSection('customer-classes'); return false;">
                   <i class="bi bi-calendar-event"></i> View Classes
                 </a>
               </div>
@@ -540,73 +514,49 @@
           </div>
         </div>
 
-        <div class="row">
-          <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-              <div class="card-body">
-                <h5 class="card-title">
-                  <i class="bi bi-people text-primary"></i> Customer Management
-                </h5>
-                <p class="card-text">Manage customer profiles, contact information, and account details.</p>
-                <a href="#" class="btn btn-outline-primary" data-section="customers" onclick="showSection('customers'); return false;">
-                  Manage Customers <i class="bi bi-arrow-right"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-              <div class="card-body">
-                <h5 class="card-title">
-                  <i class="bi bi-heart text-danger"></i> Pet Profiles
-                </h5>
-                <p class="card-text">Track pet information, species, breeds, and training history.</p>
-                <a href="#" class="btn btn-outline-danger" data-section="pets" onclick="showSection('pets'); return false;">
-                  Manage Pets <i class="bi bi-arrow-right"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-              <div class="card-body">
-                <h5 class="card-title">
-                  <i class="bi bi-calendar-check text-success"></i> Bookings
-                </h5>
-                <p class="card-text">View and manage class bookings, payments, and schedules.</p>
-                <a href="#" class="btn btn-outline-success" data-section="bookings" onclick="showSection('bookings'); return false;">
-                  Manage Bookings <i class="bi bi-arrow-right"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div class="row mt-4">
-          <div class="col-12">
-            <div class="card shadow-sm">
-              <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Quick Stats</h5>
-              </div>
-              <div class="card-body">
-                <div class="row text-center" id="home-stats">
-                  <div class="col-md-3">
-                    <h3 class="text-primary" id="stat-customers">-</h3>
-                    <p class="text-muted">Customers</p>
-                  </div>
-                  <div class="col-md-3">
-                    <h3 class="text-danger" id="stat-pets">-</h3>
-                    <p class="text-muted">Pets</p>
-                  </div>
-                  <div class="col-md-3">
-                    <h3 class="text-success" id="stat-classes">-</h3>
-                    <p class="text-muted">Classes</p>
-                  </div>
-                  <div class="col-md-3">
-                    <h3 class="text-warning" id="stat-bookings">-</h3>
-                    <p class="text-muted">Bookings</p>
-                  </div>
+        <div class="row mt-4" id="home-stats">
+          <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card shadow-lg stat-card h-100">
+              <div class="card-body text-center">
+                <div class="stat-icon mb-3">
+                  <i class="bi bi-people-fill"></i>
                 </div>
+                <h2 class="stat-number mb-2" id="stat-customers">-</h2>
+                <p class="stat-label mb-0">Customers</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card shadow-lg stat-card h-100">
+              <div class="card-body text-center">
+                <div class="stat-icon mb-3">
+                  <i class="bi bi-heart-fill"></i>
+                </div>
+                <h2 class="stat-number mb-2" id="stat-pets">-</h2>
+                <p class="stat-label mb-0">Pets</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card shadow-lg stat-card h-100">
+              <div class="card-body text-center">
+                <div class="stat-icon mb-3">
+                  <i class="bi bi-calendar-event-fill"></i>
+                </div>
+                <h2 class="stat-number mb-2" id="stat-classes">-</h2>
+                <p class="stat-label mb-0">Classes</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card shadow-lg stat-card h-100">
+              <div class="card-body text-center">
+                <div class="stat-icon mb-3">
+                  <i class="bi bi-calendar-check-fill"></i>
+                </div>
+                <h2 class="stat-number mb-2" id="stat-bookings">-</h2>
+                <p class="stat-label mb-0">Bookings</p>
               </div>
             </div>
           </div>
@@ -614,6 +564,239 @@
       </div>
 
       <!-- Create Profile Section -->
+
+      <!-- Admin Dashboard Section -->
+      <div id="admin-section" class="content-section" style="display: none;">
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+              <h2><i class="bi bi-shield-check"></i> Admin Dashboard</h2>
+              <button class="btn btn-outline-danger" onclick="adminLogout()">
+                <i class="bi bi-box-arrow-right"></i> Logout
+              </button>
+            </div>
+            <p class="text-muted">Manage all aspects of Happy Paws Training</p>
+          </div>
+        </div>
+
+        <!-- Bootstrap Tabs -->
+        <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="admin-customers-tab" data-bs-toggle="tab" data-bs-target="#admin-customers-pane" type="button" role="tab">
+              <i class="bi bi-people"></i> Customers
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="admin-pets-tab" data-bs-toggle="tab" data-bs-target="#admin-pets-pane" type="button" role="tab">
+              <i class="bi bi-heart"></i> Pets
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="admin-trainers-tab" data-bs-toggle="tab" data-bs-target="#admin-trainers-pane" type="button" role="tab">
+              <i class="bi bi-person-badge"></i> Trainers
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="admin-employees-tab" data-bs-toggle="tab" data-bs-target="#admin-employees-pane" type="button" role="tab">
+              <i class="bi bi-person-workspace"></i> Employees
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="admin-classes-tab" data-bs-toggle="tab" data-bs-target="#admin-classes-pane" type="button" role="tab">
+              <i class="bi bi-calendar-event"></i> Classes
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="admin-bookings-tab" data-bs-toggle="tab" data-bs-target="#admin-bookings-pane" type="button" role="tab">
+              <i class="bi bi-calendar-check"></i> Bookings
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="adminTabContent">
+          <!-- Customers Tab -->
+          <div class="tab-pane fade show active" id="admin-customers-pane" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3><i class="bi bi-people"></i> Customers</h3>
+              <button class="btn btn-primary" onclick="openCustomerModal()">
+                <i class="bi bi-plus-circle"></i> Add Customer
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="customers-table-body">
+                  <tr>
+                    <td colspan="6" class="text-center">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Pets Tab -->
+          <div class="tab-pane fade" id="admin-pets-pane" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3><i class="bi bi-heart"></i> Pets</h3>
+              <button class="btn btn-primary" onclick="openPetModal()">
+                <i class="bi bi-plus-circle"></i> Add Pet
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Customer ID</th>
+                    <th>Name</th>
+                    <th>Species</th>
+                    <th>Breed</th>
+                    <th>Birth Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="pets-table-body">
+                  <tr>
+                    <td colspan="7" class="text-center">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Trainers Tab -->
+          <div class="tab-pane fade" id="admin-trainers-pane" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3><i class="bi bi-person-badge"></i> Trainers</h3>
+              <button class="btn btn-primary" onclick="openTrainerModal()">
+                <i class="bi bi-plus-circle"></i> Add Trainer
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Phone</th>
+                    <th>Speciality</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="trainers-table-body">
+                  <tr>
+                    <td colspan="6" class="text-center">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Employees Tab -->
+          <div class="tab-pane fade" id="admin-employees-pane" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3><i class="bi bi-person-workspace"></i> Employees</h3>
+              <button class="btn btn-primary" onclick="openEmployeeModal()">
+                <i class="bi bi-plus-circle"></i> Add Employee
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Position</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="employees-table-body">
+                  <tr>
+                    <td colspan="5" class="text-center">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Classes Tab -->
+          <div class="tab-pane fade" id="admin-classes-pane" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3><i class="bi bi-calendar-event"></i> Classes</h3>
+              <button class="btn btn-primary" onclick="openClassModal()">
+                <i class="bi bi-plus-circle"></i> Add Class
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Trainer ID</th>
+                    <th>Location</th>
+                    <th>Start Date</th>
+                    <th>Time</th>
+                    <th>Price</th>
+                    <th>Capacity</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="classes-table-body">
+                  <tr>
+                    <td colspan="10" class="text-center">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bookings Tab -->
+          <div class="tab-pane fade" id="admin-bookings-pane" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3><i class="bi bi-calendar-check"></i> Bookings</h3>
+              <button class="btn btn-primary" onclick="openBookingModal()">
+                <i class="bi bi-plus-circle"></i> Add Booking
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Class ID</th>
+                    <th>Pet ID</th>
+                    <th>Employee ID</th>
+                    <th>Booking Date</th>
+                    <th>Status</th>
+                    <th>Payment Status</th>
+                    <th>Amount Paid</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="bookings-table-body">
+                  <tr>
+                    <td colspan="9" class="text-center">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Customers Section -->
       <div id="customers-section" class="content-section" style="display: none;">
