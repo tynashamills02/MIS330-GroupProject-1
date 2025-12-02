@@ -36,8 +36,8 @@ public class ClassController : ControllerBase
                     Title = reader.GetString("title"),
                     Description = reader.GetString("description"),
                     Location = reader.GetString("location"),
-                    StartTime = reader.GetDateTime("starttime").TimeOfDay,
-                    EndTime = reader.GetDateTime("endtime").TimeOfDay,
+                    StartTime = reader.IsDBNull("starttime") ? string.Empty : $"{((TimeSpan)reader["starttime"]).Hours:D2}:{((TimeSpan)reader["starttime"]).Minutes:D2}:{((TimeSpan)reader["starttime"]).Seconds:D2}",
+                    EndTime = reader.IsDBNull("endtime") ? string.Empty : $"{((TimeSpan)reader["endtime"]).Hours:D2}:{((TimeSpan)reader["endtime"]).Minutes:D2}:{((TimeSpan)reader["endtime"]).Seconds:D2}",
                     StartDate = reader.GetDateTime("startdate"),
                     EndDate = reader.GetDateTime("enddate"),
                     MaxCapacity = reader.GetInt32("maxcapacity"),
@@ -80,8 +80,8 @@ public class ClassController : ControllerBase
                     Title = reader.GetString("title"),
                     Description = reader.GetString("description"),
                     Location = reader.GetString("location"),
-                    StartTime = reader.GetDateTime("starttime").TimeOfDay,
-                    EndTime = reader.GetDateTime("endtime").TimeOfDay,
+                    StartTime = reader.IsDBNull("starttime") ? string.Empty : $"{((TimeSpan)reader["starttime"]).Hours:D2}:{((TimeSpan)reader["starttime"]).Minutes:D2}:{((TimeSpan)reader["starttime"]).Seconds:D2}",
+                    EndTime = reader.IsDBNull("endtime") ? string.Empty : $"{((TimeSpan)reader["endtime"]).Hours:D2}:{((TimeSpan)reader["endtime"]).Minutes:D2}:{((TimeSpan)reader["endtime"]).Seconds:D2}",
                     StartDate = reader.GetDateTime("startdate"),
                     EndDate = reader.GetDateTime("enddate"),
                     MaxCapacity = reader.GetInt32("maxcapacity"),
@@ -243,8 +243,8 @@ public class Class
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
-    public TimeSpan StartTime { get; set; }
-    public TimeSpan EndTime { get; set; }
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public int MaxCapacity { get; set; }
