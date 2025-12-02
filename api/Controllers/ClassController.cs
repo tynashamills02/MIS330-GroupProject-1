@@ -15,6 +15,8 @@ public class ClassController : ControllerBase
         _connection = connection;
     }
 
+    // NOTE: Keep existing endpoints as-is for customers/admin. New endpoints are additive only.
+
     // GET: api/Class
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Class>>> GetAllClasses()
@@ -51,6 +53,59 @@ public class ClassController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "Error retrieving classes", error = ex.Message });
+        }
+        finally
+        {
+            if (_connection.State == ConnectionState.Open)
+                await _connection.CloseAsync();
+        }
+    }
+
+    // GET: api/Class/by-trainer/5
+    // Returns only classes that belong to the specified trainer.
+    // Used by the trainer "My Classes" view so trainers only see their own classes.
+    [HttpGet("by-trainer/{trainerId}")]
+    public async Task<ActionResult<IEnumerable<Class>>> GetClassesByTrainer(int trainerId)
+    {
+        try
+        {
+            await _connection.OpenAsync();
+            var classes = new List<Class>();
+            var command = new MySqlCommand(
+                "SELECT classid, trainerid, classtype, title, description, location, starttime, endtime, startdate, enddate, maxcapacity, price, category FROM Class WHERE trainerid = @trainerid",
+                _connection);
+            command.Parameters.AddWithValue("@trainerid", trainerId);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                classes.Add(new Class
+                {
+                    ClassId = reader.GetInt32("classid"),
+                    TrainerId = reader.GetInt32("trainerid"),
+                    ClassType = reader.GetString("classtype"),
+                    Title = reader.GetString("title"),
+                    Description = reader.GetString("description"),
+                    Location = reader.GetString("location"),
+                    StartTime = reader.IsDBNull("starttime")
+                        ? string.Empty
+                        : $"{((TimeSpan)reader["starttime"]).Hours:D2}:{((TimeSpan)reader["starttime"]).Minutes:D2}:{((TimeSpan)reader["starttime"]).Seconds:D2}",
+                    EndTime = reader.IsDBNull("endtime")
+                        ? string.Empty
+                        : $"{((TimeSpan)reader["endtime"]).Hours:D2}:{((TimeSpan)reader["endtime"]).Minutes:D2}:{((TimeSpan)reader["endtime"]).Seconds:D2}",
+                    StartDate = reader.GetDateTime("startdate"),
+                    EndDate = reader.GetDateTime("enddate"),
+                    MaxCapacity = reader.GetInt32("maxcapacity"),
+                    Price = reader.GetDecimal("price"),
+                    Category = reader.IsDBNull("category") ? null : reader.GetString("category")
+                });
+            }
+
+            return Ok(classes);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error retrieving classes for trainer", error = ex.Message });
         }
         finally
         {

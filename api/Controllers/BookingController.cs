@@ -54,6 +54,54 @@ public class BookingController : ControllerBase
         }
     }
 
+    // GET: api/Booking/by-trainer/5
+    // Returns only bookings for classes that belong to the specified trainer.
+    // Used by the trainer "View Bookings" view so trainers only see bookings for their own classes.
+    [HttpGet("by-trainer/{trainerId}")]
+    public async Task<ActionResult<IEnumerable<Booking>>> GetBookingsByTrainer(int trainerId)
+    {
+        try
+        {
+            await _connection.OpenAsync();
+            var bookings = new List<Booking>();
+            // Join Booking with Class to filter by trainerId
+            var command = new MySqlCommand(
+                "SELECT b.bookingid, b.classid, b.petid, b.empid, b.bookingdate, b.status, b.paymentstatus, b.amountpaid " +
+                "FROM Booking b " +
+                "INNER JOIN Class c ON b.classid = c.classid " +
+                "WHERE c.trainerid = @trainerid",
+                _connection);
+            command.Parameters.AddWithValue("@trainerid", trainerId);
+            
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                bookings.Add(new Booking
+                {
+                    BookingId = reader.GetInt32("bookingid"),
+                    ClassId = reader.GetInt32("classid"),
+                    PetId = reader.GetInt32("petid"),
+                    EmployeeId = reader.GetInt32("empid"),
+                    BookingDate = reader.GetDateTime("bookingdate"),
+                    Status = reader.GetString("status"),
+                    PaymentStatus = reader.GetString("paymentstatus"),
+                    AmountPaid = reader.GetDecimal("amountpaid")
+                });
+            }
+            
+            return Ok(bookings);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error retrieving bookings for trainer", error = ex.Message });
+        }
+        finally
+        {
+            if (_connection.State == ConnectionState.Open)
+                await _connection.CloseAsync();
+        }
+    }
+
     // GET: api/Booking/5
     [HttpGet("{id}")]
     public async Task<ActionResult<Booking>> GetBooking(int id)

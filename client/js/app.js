@@ -88,10 +88,20 @@ function showSection(sectionName) {
         loadEmployees();
         break;
       case 'classes':
-        loadClasses();
+        // Trainers should only see their own classes; everyone else sees all classes
+        if (currentUser && currentUser.userType === 'trainer') {
+          loadTrainerClasses();
+        } else {
+          loadClasses();
+        }
         break;
       case 'bookings':
-        loadBookings();
+        // Trainers should only see bookings for their own classes; everyone else sees all bookings
+        if (currentUser && currentUser.userType === 'trainer') {
+          loadTrainerBookings();
+        } else {
+          loadBookings();
+        }
         break;
       case 'customer-dashboard':
         updateCustomerDashboard();
@@ -683,7 +693,7 @@ function deleteEmployee(id) {
   modal.show();
 }
 
-// ==================== CLASSES ====================
+// ==================== CLASSES (ADMIN / GENERIC) ====================
 async function loadClasses() {
   try {
     const classes = await apiCall('Class');
@@ -751,6 +761,81 @@ async function loadClasses() {
       tbody = document.getElementById('classes-table-body');
     }
     
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading data</td></tr>';
+    }
+  }
+}
+
+// ==================== CLASSES (TRAINER VIEW) ====================
+// Trainers should only see classes that belong to them.
+async function loadTrainerClasses() {
+  try {
+    if (!currentUser || currentUser.userType !== 'trainer') {
+      showAlert('Please log in as a trainer to view your classes.', 'warning');
+      return;
+    }
+
+    // Call trainer-specific endpoint; keeps customer/admin behavior unchanged.
+    const classes = await apiCall(`Class/by-trainer/${currentUser.userId}`);
+
+    // Trainer uses the main classes table, not the admin tab.
+    const classesSection = document.getElementById('classes-section');
+    let tbody = null;
+
+    if (classesSection) {
+      tbody = classesSection.querySelector('#classes-table-body');
+    } else {
+      tbody = document.getElementById('classes-table-body');
+    }
+
+    if (!tbody) {
+      console.error('Trainer classes table body not found');
+      return;
+    }
+
+    if (!classes || classes.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" class="text-center">No classes found for this trainer</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = classes.map(cls => {
+      const startTime = formatTimeSpan(cls.startTime);
+      const endTime = formatTimeSpan(cls.endTime);
+      return `
+        <tr>
+          <td>${cls.classId}</td>
+          <td>${cls.title}</td>
+          <td>${cls.classType}</td>
+          <td>${cls.trainerId}</td>
+          <td>${cls.location}</td>
+          <td>${new Date(cls.startDate).toLocaleDateString()}</td>
+          <td>${startTime} - ${endTime}</td>
+          <td>$${parseFloat(cls.price).toFixed(2)}</td>
+          <td>${cls.maxCapacity}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="editClass(${cls.classId})">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="deleteClass(${cls.classId})">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (error) {
+    showAlert(`Error loading trainer classes: ${error.message}`, 'danger');
+
+    const classesSection = document.getElementById('classes-section');
+    let tbody = null;
+
+    if (classesSection) {
+      tbody = classesSection.querySelector('#classes-table-body');
+    } else {
+      tbody = document.getElementById('classes-table-body');
+    }
+
     if (tbody) {
       tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading data</td></tr>';
     }
@@ -867,13 +952,111 @@ function deleteClass(id) {
   modal.show();
 }
 
+// ==================== BOOKINGS (TRAINER VIEW) ====================
+// Trainers should only see bookings for classes they teach.
+async function loadTrainerBookings() {
+  try {
+    if (!currentUser || currentUser.userType !== 'trainer') {
+      showAlert('Please log in as a trainer to view your class bookings.', 'warning');
+      return;
+    }
+
+    // Call trainer-specific endpoint; keeps customer/admin behavior unchanged.
+    const bookings = await apiCall(`Booking/by-trainer/${currentUser.userId}`);
+    
+    // Find table body in bookings-section (for trainer view) or admin section
+    const bookingsSection = document.getElementById('bookings-section');
+    const adminSection = document.getElementById('admin-section');
+    let tbody = null;
+    
+    // Prioritize bookings-section if it's visible, otherwise use admin section
+    if (bookingsSection && bookingsSection.style.display !== 'none') {
+      tbody = bookingsSection.querySelector('#bookings-table-body');
+    } else if (adminSection && adminSection.style.display !== 'none') {
+      tbody = adminSection.querySelector('#bookings-table-body');
+    } else {
+      // Fallback to first found
+      tbody = document.getElementById('bookings-table-body');
+    }
+    
+    if (!tbody) {
+      console.error('Bookings table body not found');
+      return;
+    }
+    
+    if (!bookings || bookings.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center">No bookings found for your classes</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = bookings.map(booking => `
+      <tr>
+        <td>${booking.bookingId}</td>
+        <td>${booking.classId}</td>
+        <td>${booking.petId}</td>
+        <td>${booking.employeeId}</td>
+        <td>${new Date(booking.bookingDate).toLocaleString()}</td>
+        <td><span class="badge bg-${getStatusBadgeColor(booking.status)}">${booking.status}</span></td>
+        <td><span class="badge bg-${getPaymentBadgeColor(booking.paymentStatus)}">${booking.paymentStatus}</span></td>
+        <td>$${parseFloat(booking.amountPaid).toFixed(2)}</td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="editBooking(${booking.bookingId})">
+            <i class="bi bi-pencil"></i> Edit
+          </button>
+          <button class="btn btn-sm btn-danger" onclick="deleteBooking(${booking.bookingId})">
+            <i class="bi bi-trash"></i> Delete
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (error) {
+    showAlert(`Error loading trainer bookings: ${error.message}`, 'danger');
+    
+    // Find table body in the visible section
+    const bookingsSection = document.getElementById('bookings-section');
+    const adminSection = document.getElementById('admin-section');
+    let tbody = null;
+    
+    if (bookingsSection && bookingsSection.style.display !== 'none') {
+      tbody = bookingsSection.querySelector('#bookings-table-body');
+    } else if (adminSection && adminSection.style.display !== 'none') {
+      tbody = adminSection.querySelector('#bookings-table-body');
+    } else {
+      tbody = document.getElementById('bookings-table-body');
+    }
+    
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading data</td></tr>';
+    }
+  }
+}
+
 // ==================== BOOKINGS ====================
 async function loadBookings() {
   try {
     const bookings = await apiCall('Booking');
-    const tbody = document.getElementById('bookings-table-body');
     
-    if (bookings.length === 0) {
+    // Find table body in bookings-section (for standalone view) or admin section
+    const bookingsSection = document.getElementById('bookings-section');
+    const adminSection = document.getElementById('admin-section');
+    let tbody = null;
+    
+    // Prioritize bookings-section if it's visible, otherwise use admin section
+    if (bookingsSection && bookingsSection.style.display !== 'none') {
+      tbody = bookingsSection.querySelector('#bookings-table-body');
+    } else if (adminSection && adminSection.style.display !== 'none') {
+      tbody = adminSection.querySelector('#bookings-table-body');
+    } else {
+      // Fallback to first found
+      tbody = document.getElementById('bookings-table-body');
+    }
+    
+    if (!tbody) {
+      console.error('Bookings table body not found');
+      return;
+    }
+    
+    if (!bookings || bookings.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" class="text-center">No bookings found</td></tr>';
       return;
     }
@@ -900,8 +1083,23 @@ async function loadBookings() {
     `).join('');
   } catch (error) {
     showAlert(`Error loading bookings: ${error.message}`, 'danger');
-    document.getElementById('bookings-table-body').innerHTML = 
-      '<tr><td colspan="9" class="text-center text-danger">Error loading data</td></tr>';
+    
+    // Find table body in the visible section
+    const bookingsSection = document.getElementById('bookings-section');
+    const adminSection = document.getElementById('admin-section');
+    let tbody = null;
+    
+    if (bookingsSection && bookingsSection.style.display !== 'none') {
+      tbody = bookingsSection.querySelector('#bookings-table-body');
+    } else if (adminSection && adminSection.style.display !== 'none') {
+      tbody = adminSection.querySelector('#bookings-table-body');
+    } else {
+      tbody = document.getElementById('bookings-table-body');
+    }
+    
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading data</td></tr>';
+    }
   }
 }
 
