@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 using System.Data;
+using System.Text.Json.Serialization;
 
 namespace api.Controllers;
 
@@ -92,6 +93,33 @@ public class CustomerController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Customer>> CreateCustomer([FromBody] Customer customer)
     {
+        // Validate required fields
+        if (customer == null)
+        {
+            return BadRequest(new { message = "Customer data is required" });
+        }
+
+        // Trim and validate required fields
+        var firstName = customer.FirstName?.Trim() ?? string.Empty;
+        var lastName = customer.LastName?.Trim() ?? string.Empty;
+        var phoneNum = customer.PhoneNum?.Trim() ?? string.Empty;
+        var address = customer.Address?.Trim();
+
+        if (string.IsNullOrWhiteSpace(firstName))
+        {
+            return BadRequest(new { message = "First name is required" });
+        }
+
+        if (string.IsNullOrWhiteSpace(lastName))
+        {
+            return BadRequest(new { message = "Last name is required" });
+        }
+
+        if (string.IsNullOrWhiteSpace(phoneNum))
+        {
+            return BadRequest(new { message = "Phone number is required" });
+        }
+
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
@@ -104,13 +132,20 @@ public class CustomerController : ControllerBase
                 "INSERT INTO Customer (firstname, lastname, phonenum, address) VALUES (@firstname, @lastname, @phonenum, @address); SELECT LAST_INSERT_ID();",
                 _connection);
             
-            command.Parameters.AddWithValue("@firstname", customer.FirstName);
-            command.Parameters.AddWithValue("@lastname", customer.LastName);
-            command.Parameters.AddWithValue("@phonenum", customer.PhoneNum);
-            command.Parameters.AddWithValue("@address", (object?)customer.Address ?? DBNull.Value);
+            // Map JSON properties to database columns - use trimmed values
+            // Defensive check: never insert empty strings for required fields
+            command.Parameters.AddWithValue("@firstname", firstName);
+            command.Parameters.AddWithValue("@lastname", lastName);
+            command.Parameters.AddWithValue("@phonenum", phoneNum);
+            // Address is optional (nullable) - only insert if not empty
+            command.Parameters.AddWithValue("@address", string.IsNullOrWhiteSpace(address) ? DBNull.Value : address);
             
             var newId = Convert.ToInt32(await command.ExecuteScalarAsync());
             customer.CustomerId = newId;
+            customer.FirstName = firstName;
+            customer.LastName = lastName;
+            customer.PhoneNum = phoneNum;
+            customer.Address = address;
             
             return CreatedAtAction(nameof(GetCustomer), new { id = newId }, customer);
         }
@@ -205,10 +240,19 @@ public class CustomerController : ControllerBase
 
 public class Customer
 {
+    [JsonPropertyName("customerId")]
     public int CustomerId { get; set; }
+    
+    [JsonPropertyName("firstName")]
     public string FirstName { get; set; } = string.Empty;
+    
+    [JsonPropertyName("lastName")]
     public string LastName { get; set; } = string.Empty;
+    
+    [JsonPropertyName("phoneNum")]
     public string PhoneNum { get; set; } = string.Empty;
+    
+    [JsonPropertyName("address")]
     public string? Address { get; set; }
 }
 

@@ -175,6 +175,7 @@ async function apiCall(endpoint, method = 'GET', data = null) {
     };
     
     if (data && (method === 'POST' || method === 'PUT')) {
+      console.log(`Sending to API [${method} ${endpoint}]:`, JSON.stringify(data));
       options.body = JSON.stringify(data);
     }
     
@@ -274,17 +275,45 @@ async function editCustomer(id) {
 
 async function saveCustomer() {
   const form = document.getElementById('customerForm');
+  if (!form) {
+    showAlert('Form not found', 'danger');
+    return;
+  }
+  
+  // HTML5 validation handles required fields
   if (!form.checkValidity()) {
     form.reportValidity();
     return;
   }
   
+  // Safely get form elements
+  const customerIdEl = document.getElementById('customerId');
+  const firstNameEl = document.getElementById('customerFirstName');
+  const lastNameEl = document.getElementById('customerLastName');
+  const phoneEl = document.getElementById('customerPhone');
+  const addressEl = document.getElementById('customerAddress');
+  
+  // Check if required elements exist
+  if (!firstNameEl || !lastNameEl || !phoneEl) {
+    showAlert('Form fields not found', 'danger');
+    return;
+  }
+  
+  // Safely get and trim values (handle undefined/null)
+  const customerId = customerIdEl ? (parseInt(customerIdEl.value) || 0) : 0;
+  const firstName = (firstNameEl.value || '').trim();
+  const lastName = (lastNameEl.value || '').trim();
+  const phoneNum = (phoneEl.value || '').trim();
+  const address = addressEl ? (addressEl.value || '').trim() : '';
+  
+  // Build customer object with trimmed values
+  // Backend will validate required fields
   const customer = {
-    customerId: parseInt(document.getElementById('customerId').value) || 0,
-    firstName: document.getElementById('customerFirstName').value,
-    lastName: document.getElementById('customerLastName').value,
-    phoneNum: document.getElementById('customerPhone').value,
-    address: document.getElementById('customerAddress').value || null
+    customerId: customerId,
+    firstName: firstName,
+    lastName: lastName,
+    phoneNum: phoneNum,
+    address: address || null
   };
   
   try {
@@ -1244,24 +1273,94 @@ function setupCreateProfileForm() {
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      await saveProfileFromForm();
+      await saveProfileFromForm(form);
     });
   }
 }
 
-async function saveProfileFromForm() {
-  const form = document.getElementById('createProfileForm');
-  if (!form.checkValidity()) {
-    form.reportValidity();
+async function saveProfileFromForm(form) {
+
+
+
+  const firstNameEl = form.querySelector('#profileFirstName');
+  const lastNameEl  = form.querySelector('#profileLastName');
+  const phoneEl     = form.querySelector('#profilePhone');
+  const addressEl   = form.querySelector('#profileAddress');
+
+  // Safety check
+  if (!firstNameEl || !lastNameEl || !phoneEl || !addressEl) {
+    console.error('One or more input elements not found in the form');
     return false;
   }
+
+  const firstName = firstNameEl.value.trim();
+  const lastName  = lastNameEl.value.trim();
+  const phone     = phoneEl.value.trim();
+  const address   = addressEl.value.trim();
+
+  if (!firstName || !lastName || !phone) {
+    alert('Please fill in all required fields.');
+    return false;
+  }
+//   console.log("saveProfileFromForm called");
+//   const form = document.getElementById('createProfileForm');
+//   if (!form) {
+//     showAlert('Form not found', 'danger');
+//     return false;
+//   }
   
+//   if (!form.checkValidity()) {
+//     form.reportValidity();
+//     return false;
+//   }
+  
+//   // Safely get form elements and values
+//   const firstNameEl = document.getElementById('profileFirstName');
+//   const lastNameEl = document.getElementById('profileLastName');
+//   const phoneEl = document.getElementById('profilePhone');
+//   const addressEl = document.getElementById('profileAddress');
+  
+//   // Check if elements exist
+//   if (!firstNameEl || !lastNameEl || !phoneEl) {
+//     showAlert('Form fields not found', 'danger');
+//     return false;
+//   }
+  
+//   console.log('firstNameEl:', firstNameEl);
+// console.log('lastNameEl:', lastNameEl);
+// console.log('phoneEl:', phoneEl);
+// console.log('addressEl:', addressEl);
+//   // Safely get and trim values (handle undefined/null)
+//   const firstName = (firstNameEl.value || '').trim();
+//   const lastName = (lastNameEl.value || '').trim();
+//   const phoneNum = (phoneEl.value || '').trim();
+//   const address = addressEl ? (addressEl.value || '').trim() : '';
+
+//   // Validate required fields
+//   if (!firstName) {
+//     showAlert('First name is required', 'danger');
+//     firstNameEl.focus();
+//     return false;
+//   }
+//   if (!lastName) {
+//     showAlert('Last name is required', 'danger');
+//     lastNameEl.focus();
+//     return false;
+//   }
+//   if (!phoneNum) {
+//     showAlert('Phone number is required', 'danger');
+//     phoneEl.focus();
+//     return false;
+//   }
+  
+  // Build customer object
   const customer = {
-    firstName: document.getElementById('profileFirstName').value,
-    lastName: document.getElementById('profileLastName').value,
-    phoneNum: document.getElementById('profilePhone').value,
-    address: document.getElementById('profileAddress').value || null
+    firstName: firstName,
+    lastName: lastName,
+    phoneNum: phone,
+    address: address || null
   };
+
   
   try {
     await apiCall('Customer', 'POST', customer);
@@ -1517,18 +1616,27 @@ function openCreateProfileModal() {
 }
 
 async function submitCreateProfileModal() {
-  // Use the existing saveProfileFromForm function
-  const success = await saveProfileFromForm();
-  
-  if (success) {
-    // Close the modal after successful submission
-    const modal = bootstrap.Modal.getInstance(document.getElementById('createProfileModal'));
-    if (modal) {
-      modal.hide();
-    }
-    showAlert('Profile created successfully! You can now log in.', 'success');
+
+  const form = document.getElementById('createProfileForm');  // same form
+  if (!form) {
+    console.error('Form not found');
+    return false;
   }
+
+  const success = await saveProfileFromForm(form);
 }
+  // Use the existing saveProfileFromForm function
+//   const success = await saveProfileFromForm();
+  
+//   if (success) {
+//     // Close the modal after successful submission
+//     const modal = bootstrap.Modal.getInstance(document.getElementById('createProfileModal'));
+//     if (modal) {
+//       modal.hide();
+//     }
+//     showAlert('Profile created successfully! You can now log in.', 'success');
+//   }
+// }
 
 // ==================== VIEW PROFILE ====================
 async function openViewProfileModal() {
